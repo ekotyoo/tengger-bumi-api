@@ -1,6 +1,7 @@
 import { Entity, BaseEntity, Column, PrimaryGeneratedColumn, Generated, OneToMany, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from "typeorm";
 import { Image } from "./image.entity";
 import { User } from "./user.entity";
+import { School } from "./school.entity";
 
 export enum ReportCategory {
     LOW = "low",
@@ -42,6 +43,10 @@ export class Report extends BaseEntity {
     @ManyToOne(() => User, (user) => user.reports, { onDelete: "CASCADE" })
     @JoinColumn()
     user!: User
+
+    @ManyToOne(() => School, (school) => school.reports, { onDelete: "CASCADE" })
+    @JoinColumn()
+    school!: School
 
     @CreateDateColumn()
     created_at!: Date
