@@ -81,14 +81,14 @@ export const getReport: RequestHandler = async (req, res, next) => {
     const id = req.params.id;
 
     try {
-        const report = await Report.find({
+        const report = await Report.findOne({
             where: { uuid: id },
             relations: { images: true }
         });
 
-        if (!report[0]) return next(createHttpError(404, `Report with id: ${id} does not exists`));
+        if (!report) return next(createHttpError(404, `Report with id: ${id} does not exists`));
 
-        req.body = report[0];
+        req.body = report;
         return next();
     } catch (err) {
         return next(err);

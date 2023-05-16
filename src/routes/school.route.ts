@@ -6,6 +6,8 @@ import { schoolValidator } from "../validations/school.validator";
 
 const router = express.Router();
 
-router.post("/", requiresAuth, upload.single("image"), SchoolController.postSchool);
+router.post("/", requiresAuth, upload.single("image"), schoolValidator, SchoolController.postSchool);
+router.get("/", requiresAuth, SchoolController.getSchools);
+router.get("/:id", requiresAuth, SchoolController.getSchool);
 
 export default router;

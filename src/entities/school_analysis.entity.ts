@@ -1,4 +1,5 @@
-import { BaseEntity, Column, CreateDateColumn, Entity, Generated, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { BaseEntity, Column, CreateDateColumn, Entity, Generated, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { School } from "./school.entity";
 
 @Entity("school_analysis")
 export class SchoolAnalysis extends BaseEntity {
@@ -17,6 +18,9 @@ export class SchoolAnalysis extends BaseEntity {
 
     @Column({ nullable: true, default: null })
     recovery_level!: number
+
+    @OneToOne(() => School, { onDelete: "CASCADE" })
+    school!: School
 
     @CreateDateColumn()
     created_at!: Date
