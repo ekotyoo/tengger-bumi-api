@@ -4,6 +4,7 @@ import { User } from "./user.entity";
 import { School } from "./school.entity";
 import { Category } from "./category.entity";
 import { Room } from "./room.entity";
+import { Comment } from "./comment.entity";
 
 @Entity("reports")
 export class Report extends BaseEntity {
@@ -44,6 +45,12 @@ export class Report extends BaseEntity {
     @OneToOne(() => Room)
     @JoinColumn()
     room!: Room
+
+    @OneToMany(() => Comment, (comment) => comment.report)
+    comments!: Comment[]
+
+    @Column("json", { nullable: true })
+    additional_infos!: JSON[]
 
     @CreateDateColumn()
     created_at!: Date

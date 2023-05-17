@@ -10,7 +10,7 @@ import { Room } from "../entities/room.entity";
 import { School } from "../entities/school.entity";
 
 export const postReport: RequestHandler = async (req, res, next) => {
-    const { room_id, school_id, user_id, description, latitude, longitude, category_id } = req.body;
+    const { room_id, school_id, user_id, description, latitude, longitude, category_id, additional_infos } = req.body;
 
     try {
         const user = await User.findOneByOrFail({ uuid: user_id });
@@ -38,6 +38,7 @@ export const postReport: RequestHandler = async (req, res, next) => {
         newReport.description = description;
         newReport.is_active = true;
         newReport.images = images;
+        newReport.additional_infos = additional_infos;
 
         const report = await newReport.save();
 
@@ -126,12 +127,41 @@ export const getReport: RequestHandler = async (req, res, next) => {
     try {
         const report = await Report.findOne({
             where: { uuid: id },
-            relations: { images: true }
+            relations: {
+                user: true,
+                images: true,
+                room: true,
+                category: true,
+                school: true,
+            }
         });
 
         if (!report) return next(createHttpError(404, `Report with id: ${id} does not exists`));
 
-        req.body = report;
+        req.body = {
+            id: report.uuid,
+            description: report.description,
+            is_active: report.is_active,
+            school: report.school.name,
+            author: {
+                id: report.user.uuid,
+                name: report.user.name,
+                avatar: report.user.avatar_path
+            },
+            position: {
+                latitude: report.latitude,
+                longitude: report.longitude
+            },
+            created_at: report.created_at,
+            images: report.images.map((image) => image.file_path),
+            room: report.room.label,
+            category: {
+                id: report.category.uuid,
+                name: report.category.name,
+                type: report.category.type
+            },
+            additional_infos: report.additional_infos
+        };
         return next();
     } catch (err) {
         return next(err);

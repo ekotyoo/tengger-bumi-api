@@ -1,5 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, Generated, CreateDateColumn, UpdateDateColumn, BaseEntity, OneToMany } from "typeorm";
 import { Report } from "./report.entity";
+import { Comment } from "./comment.entity";
 
 @Entity("users")
 export class User extends BaseEntity {
@@ -28,6 +29,9 @@ export class User extends BaseEntity {
 
     @OneToMany(() => Report, (report) => report.user)
     reports!: Report[]
+
+    @OneToMany(() => Comment, (comment) => comment.author)
+    comments!: Comment[]
 
     @CreateDateColumn()
     created_at!: Date

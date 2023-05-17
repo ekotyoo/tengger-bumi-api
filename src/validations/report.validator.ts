@@ -10,7 +10,11 @@ export const reportValidator = (req: Request, res: Response, next: NextFunction)
         longitude: Joi.number().required(),
         category_id: Joi.string().required(),
         school_id: Joi.string().required(),
-        room_id: Joi.string().required()
+        room_id: Joi.string().required(),
+        additional_infos: Joi.array().items({
+            label: Joi.string().required(),
+            information: Joi.string().required()
+        })
     });
 
     validationHandler(req, res, next, schema);

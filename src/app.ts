@@ -10,6 +10,7 @@ import reportRoutes from "./routes/report.route";
 import userRoutes from "./routes/user.route";
 import schoolRoutes from "./routes/school.route";
 import categoryRoutes from "./routes/category.route";
+import commentRoutes from "./routes/comment.route";
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use(express.static("public"));
 
 app.use("/api/auth", authRoutes, responseFormatter);
 app.use("/api/report", reportRoutes, responseFormatter);
+app.use("/api/comment", commentRoutes, responseFormatter);
 app.use("/api/user", userRoutes, responseFormatter);
 app.use("/api/school", schoolRoutes, responseFormatter);
 app.use("/api/category", categoryRoutes, responseFormatter);
