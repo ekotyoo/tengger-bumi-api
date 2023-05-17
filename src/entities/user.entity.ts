@@ -1,6 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn, Generated, CreateDateColumn, UpdateDateColumn, BaseEntity, OneToMany } from "typeorm";
 import { Report } from "./report.entity";
 import { Comment } from "./comment.entity";
+import { Like } from "./like.entity";
 
 @Entity("users")
 export class User extends BaseEntity {
@@ -32,6 +33,9 @@ export class User extends BaseEntity {
 
     @OneToMany(() => Comment, (comment) => comment.author)
     comments!: Comment[]
+
+    @OneToMany(() => Like, (like) => like.user)
+    likes!: Like[]
 
     @CreateDateColumn()
     created_at!: Date

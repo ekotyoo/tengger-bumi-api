@@ -11,5 +11,7 @@ router.get("/", requiresAuth, ReportController.getReports);
 router.get("/:id", requiresAuth, ReportController.getReport);
 router.put("/:id", requiresAuth, ReportController.updateReport);
 router.delete("/:id", requiresAuth, ReportController.deleteReport);
+router.post("/:id/like", requiresAuth, ReportController.postLike);
+router.delete("/:id/like", requiresAuth, ReportController.deleteLike);
 
 export default router;

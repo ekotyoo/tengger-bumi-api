@@ -5,6 +5,7 @@ import { School } from "./school.entity";
 import { Category } from "./category.entity";
 import { Room } from "./room.entity";
 import { Comment } from "./comment.entity";
+import { Like } from "./like.entity";
 
 @Entity("reports")
 export class Report extends BaseEntity {
@@ -48,6 +49,9 @@ export class Report extends BaseEntity {
 
     @OneToMany(() => Comment, (comment) => comment.report)
     comments!: Comment[]
+
+    @OneToMany(() => Like, (like) => like.report)
+    likes!: Like[]
 
     @Column("json", { nullable: true })
     additional_infos!: JSON[]

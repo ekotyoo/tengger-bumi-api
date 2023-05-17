@@ -8,6 +8,7 @@ import { paginateResponse } from "../util/pagination";
 import { Category } from "../entities/category.entity";
 import { Room } from "../entities/room.entity";
 import { School } from "../entities/school.entity";
+import { Like } from "../entities/like.entity";
 
 export const postReport: RequestHandler = async (req, res, next) => {
     const { room_id, school_id, user_id, description, latitude, longitude, category_id, additional_infos } = req.body;
@@ -50,7 +51,7 @@ export const postReport: RequestHandler = async (req, res, next) => {
 }
 
 export const getReports: RequestHandler = async (req, res, next) => {
-    const { category, is_active, from_timestamp, to_timestamp, school_id } = req.body;
+    const { category, is_active, from_timestamp, to_timestamp, school_id, user_id } = req.body;
 
     const take = parseInt(req.query.take as string) || 20;
     const page = parseInt(req.query.page as string) || 1;
@@ -83,6 +84,10 @@ export const getReports: RequestHandler = async (req, res, next) => {
                 room: true,
                 category: true,
                 school: true,
+                likes: {
+                    user: true
+                },
+                comments: true,
             },
             order: {
                 created_at: "DESC"
@@ -96,6 +101,10 @@ export const getReports: RequestHandler = async (req, res, next) => {
             description: report.description,
             is_active: report.is_active,
             school: report.school.name,
+            liked: report.likes?.find((val) => val.user.uuid == user_id)?.is_like,
+            likes_count: report.likes?.filter((val) => val.is_like).length ?? 0,
+            dislikes_count: report.likes?.filter((val) => !val.is_like).length ?? 0,
+            comments_count: report.comments?.length,
             author: {
                 id: report.user.uuid,
                 name: report.user.name,
@@ -122,27 +131,34 @@ export const getReports: RequestHandler = async (req, res, next) => {
 }
 
 export const getReport: RequestHandler = async (req, res, next) => {
-    const id = req.params.id;
+    const report_id = req.params.id;
+    const user_id = req.body.user_id;
 
     try {
         const report = await Report.findOne({
-            where: { uuid: id },
+            where: { uuid: report_id },
             relations: {
                 user: true,
                 images: true,
                 room: true,
                 category: true,
                 school: true,
+                likes: {
+                    user: true
+                }
             }
         });
 
-        if (!report) return next(createHttpError(404, `Report with id: ${id} does not exists`));
+        if (!report) return next(createHttpError(404, `Report with id: ${report_id} does not exists`));
 
         req.body = {
             id: report.uuid,
             description: report.description,
             is_active: report.is_active,
             school: report.school.name,
+            liked: report.likes?.find((val) => val.user.uuid == user_id)?.is_like,
+            likes_count: report.likes?.filter((val) => val.is_like).length ?? 0,
+            dislikes_count: report.likes?.filter((val) => !val.is_like).length ?? 0,
             author: {
                 id: report.user.uuid,
                 name: report.user.name,
@@ -200,6 +216,61 @@ export const deleteReport: RequestHandler = async (req, res, next) => {
         if (!result) return next(createHttpError(404, `Report with id: "${id}" does not exists`));
 
         req.body = { message: "delete report success" };
+        return next();
+    } catch (err) {
+        return next(err);
+    }
+}
+
+export const postLike: RequestHandler = async (req, res, next) => {
+    const { user_id, is_like } = req.body;
+    const report_id = req.params.id;
+    try {
+        const report = await Report.findOneByOrFail({ uuid: report_id });
+        const user = await User.findOneByOrFail({ uuid: user_id });
+
+        const oldLike = await Like.findOne({ where: { user: { uuid: user_id }, report: { uuid: report_id } } });
+        let like = new Like();
+
+        if (oldLike) {
+            if (oldLike.is_like == is_like) {
+                req.body = {
+                    message: 'report already liked'
+                }
+                return next();
+            } else {
+                like = oldLike;
+            }
+        }
+
+        like.report = report;
+        like.user = user;
+        like.is_like = is_like;
+
+        const newLike = await like.save();
+
+        req.body = {
+            id: newLike.uuid,
+            user_id: newLike.user.uuid,
+            report_id: newLike.report.uuid
+        }
+
+        return next();
+    } catch (err) {
+        return next(err);
+    }
+}
+
+export const deleteLike: RequestHandler = async (req, res, next) => {
+    const user_id = req.body.user_id;
+    const report_id = req.params.id;
+    try {
+        const like = await Like.findOneOrFail({ where: { user: { uuid: user_id }, report: { uuid: report_id } } });
+        await like.remove();
+
+        req.body = {
+            message: 'delete like success'
+        }
         return next();
     } catch (err) {
         return next(err);
