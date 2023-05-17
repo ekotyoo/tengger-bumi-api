@@ -5,12 +5,19 @@ import { Image } from "../entities/image.entity";
 import { Report } from "../entities/report.entity";
 import { User } from "../entities/user.entity";
 import { paginateResponse } from "../util/pagination";
+import { Category } from "../entities/category.entity";
+import { Room } from "../entities/room.entity";
+import { School } from "../entities/school.entity";
 
 export const postReport: RequestHandler = async (req, res, next) => {
-    const { user_id, description, is_active, latitude, longitude, category } = req.body;
+    const { room_id, school_id, user_id, description, latitude, longitude, category_id } = req.body;
 
     try {
         const user = await User.findOneByOrFail({ uuid: user_id });
+        const category = await Category.findOneByOrFail({ uuid: category_id });
+        const room = await Room.findOneByOrFail({ uuid: room_id });
+        const school = await School.findOneByOrFail({ uuid: school_id });
+
         const imageFiles = req.files as Express.Multer.File[];
 
         if (!imageFiles?.length) return next(createHttpError(400, "Image must not be empty"));
@@ -24,10 +31,12 @@ export const postReport: RequestHandler = async (req, res, next) => {
         const newReport = new Report();
         newReport.user = user;
         newReport.category = category;
+        newReport.room = room;
+        newReport.school = school;
         newReport.latitude = latitude;
         newReport.longitude = longitude;
         newReport.description = description;
-        newReport.is_active = JSON.parse((is_active as string).toLowerCase());
+        newReport.is_active = true;
         newReport.images = images;
 
         const report = await newReport.save();
@@ -40,9 +49,9 @@ export const postReport: RequestHandler = async (req, res, next) => {
 }
 
 export const getReports: RequestHandler = async (req, res, next) => {
-    const { category, is_active, from_timestamp, to_timestamp } = req.body;
+    const { category, is_active, from_timestamp, to_timestamp, school_id } = req.body;
 
-    const take = parseInt(req.query.take as string) || 10;
+    const take = parseInt(req.query.take as string) || 20;
     const page = parseInt(req.query.page as string) || 1;
 
     let createdAtQuery;
@@ -61,17 +70,51 @@ export const getReports: RequestHandler = async (req, res, next) => {
             skip: (page - 1) * take,
             where: {
                 category: category,
-                is_active: is_active === undefined ? undefined : JSON.parse((is_active as string).toLowerCase()),
-                created_at: createdAtQuery
+                is_active: is_active,
+                created_at: createdAtQuery,
+                school: {
+                    uuid: school_id
+                }
             },
             relations: {
-                images: true
+                user: true,
+                images: true,
+                room: true,
+                category: true,
+                school: true,
             },
             order: {
                 created_at: "DESC"
             }
         });
-        return res.status(200).json(paginateResponse(data, page, take));
+
+        const [reportData, total] = data;
+
+        const reports = reportData.map((report) => <unknown>{
+            id: report.uuid,
+            description: report.description,
+            is_active: report.is_active,
+            school: report.school.name,
+            author: {
+                id: report.user.uuid,
+                name: report.user.name,
+                avatar: report.user.avatar_path
+            },
+            position: {
+                latitude: report.latitude,
+                longitude: report.longitude
+            },
+            created_at: report.created_at,
+            images: report.images.map((image) => image.file_path),
+            room: report.room.label,
+            category: {
+                id: report.category.uuid,
+                name: report.category.name,
+                type: report.category.type
+            }
+        });
+
+        return res.status(200).json(paginateResponse([reports, total], page, take));
     } catch (err) {
         return next(err);
     }

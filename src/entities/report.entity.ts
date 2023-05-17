@@ -1,13 +1,9 @@
-import { Entity, BaseEntity, Column, PrimaryGeneratedColumn, Generated, OneToMany, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import { Entity, BaseEntity, Column, PrimaryGeneratedColumn, Generated, OneToMany, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToOne } from "typeorm";
 import { Image } from "./image.entity";
 import { User } from "./user.entity";
 import { School } from "./school.entity";
-
-export enum ReportCategory {
-    LOW = "low",
-    MEDIUM = "medium",
-    HIGH = "high"
-}
+import { Category } from "./category.entity";
+import { Room } from "./room.entity";
 
 @Entity("reports")
 export class Report extends BaseEntity {
@@ -17,13 +13,6 @@ export class Report extends BaseEntity {
     @Column()
     @Generated("uuid")
     uuid!: string
-
-    @Column({
-        type: "enum",
-        enum: ReportCategory,
-        default: ReportCategory.LOW
-    })
-    category!: ReportCategory
 
     @Column()
     is_active!: boolean
@@ -37,6 +26,10 @@ export class Report extends BaseEntity {
     @Column()
     description!: string
 
+    @OneToOne(() => Category)
+    @JoinColumn()
+    category!: Category
+
     @OneToMany(() => Image, (image) => image.report, { cascade: ["insert"] })
     images!: Image[]
 
@@ -47,6 +40,10 @@ export class Report extends BaseEntity {
     @ManyToOne(() => School, (school) => school.reports, { onDelete: "CASCADE" })
     @JoinColumn()
     school!: School
+
+    @OneToOne(() => Room)
+    @JoinColumn()
+    room!: Room
 
     @CreateDateColumn()
     created_at!: Date

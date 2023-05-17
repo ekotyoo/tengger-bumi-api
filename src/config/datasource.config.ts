@@ -6,6 +6,7 @@ import env from "../util/env";
 import { School } from "../entities/school.entity";
 import { SchoolAnalysis } from "../entities/school_analysis.entity";
 import { Room } from "../entities/room.entity";
+import { Category } from "../entities/category.entity";
 
 export const AppDataSource = new DataSource({
     type: "mysql",
@@ -13,7 +14,7 @@ export const AppDataSource = new DataSource({
     username: env.DB_USER,
     password: env.DB_PASS,
     database: env.DB_NAME,
-    entities: [User, Report, Image, School, SchoolAnalysis, Room],
+    entities: [User, Report, Image, School, SchoolAnalysis, Room, Category],
     synchronize: true,
     logging: false,
 });

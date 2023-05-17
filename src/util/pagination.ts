@@ -1,6 +1,4 @@
-import { BaseEntity } from "typeorm";
-
-export const paginateResponse = (data: [BaseEntity[], number], page: number, limit: number) => {
+export const paginateResponse = (data: [unknown[], number], page: number, limit: number) => {
     const [result, total] = data;
     const lastPage = Math.ceil(total / limit);
     const nextPage = page + 1 > lastPage ? null : page + 1;

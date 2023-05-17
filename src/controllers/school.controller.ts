@@ -80,12 +80,31 @@ export const getSchool: RequestHandler = async (req, res, next) => {
         const id = req.params.id;
         const school = await School.findOne({
             where: { uuid: id },
-            relations: { school_analysis: true, reports: true, rooms: true },
+            relations: { school_analysis: true, rooms: true },
         });
 
         if (!school) return next(createHttpError(404, `Report with id: ${id} does not exists`));
 
-        req.body = school;
+        req.body = {
+            id: school.uuid,
+            name: school.name,
+            address: school.address,
+            image: school.cover_image_path,
+            created_at: school.created_at,
+            analysis: {
+                prevention_level: school.school_analysis.prevention_level,
+                emergency_response_level: school.school_analysis.emergency_response_level,
+                recovery_level: school.school_analysis.recovery_level
+            },
+            floor_plan: {
+                rooms: school.rooms.map((r) => <unknown>{
+                    id: r.uuid,
+                    label: r.label,
+                    color: r.color,
+                    polygon: r.polygon,
+                }),
+            },
+        };
         next();
     } catch (err) {
         next(err);

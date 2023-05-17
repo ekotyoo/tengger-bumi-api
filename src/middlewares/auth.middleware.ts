@@ -12,7 +12,10 @@ export const requiresAuth = (req: Request, res: Response, next: NextFunction) =>
             const decodedToken = Jwt.verify(token, secret);
             const payload = decodedToken as JwtPayload;
 
-            req.body.user_id = payload.id;
+            req.body = {
+                ...req.body,
+                user_id: payload.id
+            };
             next();
         } else {
             next(createHttpError(400, "Token is empty"));
