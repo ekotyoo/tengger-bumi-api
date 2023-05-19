@@ -6,12 +6,14 @@ import { reportValidator } from "../validations/report.validator";
 
 const router = express.Router();
 
-router.post("/", requiresAuth, upload.array("images", 3), reportValidator, ReportController.postReport);
-router.get("/", requiresAuth, ReportController.getReports);
-router.get("/:id", requiresAuth, ReportController.getReport);
-router.put("/:id", requiresAuth, ReportController.updateReport);
-router.delete("/:id", requiresAuth, ReportController.deleteReport);
-router.post("/:id/like", requiresAuth, ReportController.postLike);
-router.delete("/:id/like", requiresAuth, ReportController.deleteLike);
+router.use(requiresAuth);
+
+router.post("/", upload.array("images", 3), reportValidator, ReportController.postReport);
+router.get("/", ReportController.getReports);
+router.get("/:id", ReportController.getReport);
+router.put("/:id", ReportController.updateReport);
+router.delete("/:id", ReportController.deleteReport);
+router.post("/:id/like", ReportController.postLike);
+router.delete("/:id/like", ReportController.deleteLike);
 
 export default router;

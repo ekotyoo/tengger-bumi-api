@@ -11,7 +11,8 @@ import { School } from "../entities/school.entity";
 import { Like } from "../entities/like.entity";
 
 export const postReport: RequestHandler = async (req, res, next) => {
-    const { room_id, school_id, user_id, description, latitude, longitude, category_id, additional_infos } = req.body;
+    const { room_id, school_id, description, latitude, longitude, category_id, additional_infos } = req.body;
+    const user_id = req.user_id;
 
     try {
         const user = await User.findOneByOrFail({ uuid: user_id });
@@ -43,7 +44,33 @@ export const postReport: RequestHandler = async (req, res, next) => {
 
         const report = await newReport.save();
 
-        req.body = report;
+        req.body = {
+            id: report.uuid,
+            description: report.description,
+            is_active: report.is_active,
+            school: report.school.name,
+            liked: report.likes?.find((val) => val.user.uuid == user_id)?.is_like,
+            likes_count: report.likes?.filter((val) => val.is_like).length ?? 0,
+            dislikes_count: report.likes?.filter((val) => !val.is_like).length ?? 0,
+            comments_count: report.comments?.length,
+            author: {
+                id: report.user.uuid,
+                name: report.user.name,
+                avatar: report.user.avatar_path
+            },
+            position: {
+                latitude: report.latitude,
+                longitude: report.longitude
+            },
+            created_at: report.created_at,
+            images: report.images.map((image) => image.file_path),
+            room: report.room.label,
+            category: {
+                id: report.category.uuid,
+                name: report.category.name,
+                type: report.category.type
+            }
+        };
         return next();
     } catch (err) {
         return next(err);
@@ -51,7 +78,7 @@ export const postReport: RequestHandler = async (req, res, next) => {
 }
 
 export const getReports: RequestHandler = async (req, res, next) => {
-    const { category, is_active, from_timestamp, to_timestamp, school_id, user_id } = req.body;
+    const { type, is_active, from_timestamp, to_timestamp, school_id, user_id, author_id } = req.body;
 
     const take = parseInt(req.query.take as string) || 20;
     const page = parseInt(req.query.page as string) || 1;
@@ -71,11 +98,16 @@ export const getReports: RequestHandler = async (req, res, next) => {
             take: take,
             skip: (page - 1) * take,
             where: {
-                category: category,
+                category: {
+                    type: type
+                },
                 is_active: is_active,
                 created_at: createdAtQuery,
                 school: {
                     uuid: school_id
+                },
+                user: {
+                    uuid: author_id,
                 }
             },
             relations: {

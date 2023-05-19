@@ -12,4 +12,6 @@ router.post("/signin", signInValidator, AuthController.signIn);
 
 router.post("/signin/token", requiresAuth, AuthController.signInWithToken);
 
+router.post("/verify", AuthController.verifyUserEmail);
+
 export default router;

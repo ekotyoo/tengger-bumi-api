@@ -1,4 +1,4 @@
-import { Entity, BaseEntity, Column, PrimaryGeneratedColumn, Generated, OneToMany, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToOne } from "typeorm";
+import { Entity, BaseEntity, Column, PrimaryGeneratedColumn, Generated, OneToMany, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from "typeorm";
 import { Image } from "./image.entity";
 import { User } from "./user.entity";
 import { School } from "./school.entity";
@@ -28,7 +28,7 @@ export class Report extends BaseEntity {
     @Column()
     description!: string
 
-    @OneToOne(() => Category)
+    @ManyToOne(() => Category, (category) => category.reports)
     @JoinColumn()
     category!: Category
 
@@ -43,7 +43,7 @@ export class Report extends BaseEntity {
     @JoinColumn()
     school!: School
 
-    @OneToOne(() => Room)
+    @ManyToOne(() => Room, (room) => room.reports, { onDelete: "CASCADE" })
     @JoinColumn()
     room!: Room
 

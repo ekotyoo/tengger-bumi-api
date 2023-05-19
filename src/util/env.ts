@@ -10,4 +10,8 @@ export default cleanEnv(process.env, {
   DB_PASS: str(),
   DB_NAME: str(),
   JWT_SECRET_KEY: str(),
+  SMTP_EMAIL: str(),
+  SMTP_HOST: str(),
+  SMTP_PORT: port(),
+  SMTP_PASS: str(),
 });

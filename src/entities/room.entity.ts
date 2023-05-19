@@ -1,5 +1,6 @@
-import { BaseEntity, Column, CreateDateColumn, Entity, Generated, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { BaseEntity, Column, CreateDateColumn, Entity, Generated, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { School } from "./school.entity";
+import { Report } from "./report.entity";
 
 @Entity("rooms")
 export class Room extends BaseEntity {
@@ -25,7 +26,11 @@ export class Room extends BaseEntity {
     @Column("json")
     polygon!: JSON[]
 
-    @ManyToOne(() => School, (school) => school.reports, { onDelete: "CASCADE" })
+    @ManyToOne(() => School, (school) => school.rooms, { onDelete: "CASCADE" })
     @JoinColumn()
     school!: School
+
+    @OneToMany(() => Report, (report) => report.room)
+    @JoinColumn()
+    reports!: Report[]
 }

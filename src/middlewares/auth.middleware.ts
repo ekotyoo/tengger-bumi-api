@@ -12,6 +12,7 @@ export const requiresAuth = (req: Request, res: Response, next: NextFunction) =>
             const decodedToken = Jwt.verify(token, secret);
             const payload = decodedToken as JwtPayload;
 
+            req.user_id = payload.id;
             req.body = {
                 ...req.body,
                 user_id: payload.id

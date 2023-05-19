@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import env from "./env"
 
-export const encode = (id: string) => jwt.sign({ id }, env.JWT_SECRET_KEY, { expiresIn: '1h' });
+export const encode = (id: string) => jwt.sign({ id }, env.JWT_SECRET_KEY, { expiresIn: '1d' });
 
 export const decode = (token: string) => {
     try {

@@ -18,6 +18,12 @@ export class School extends BaseEntity {
     @Column()
     address!: string
 
+    @Column("double")
+    latitude!: number
+
+    @Column("double")
+    longitude!: number
+
     @Column({ nullable: true, default: null })
     cover_image_path!: string
 

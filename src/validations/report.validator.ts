@@ -15,7 +15,7 @@ export const reportValidator = (req: Request, res: Response, next: NextFunction)
             label: Joi.string().required(),
             information: Joi.string().required()
         })
-    });
+    }).options({ allowUnknown: true });
 
     validationHandler(req, res, next, schema);
 };

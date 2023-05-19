@@ -1,5 +1,6 @@
-import { BaseEntity, Column, Entity, Generated, PrimaryGeneratedColumn } from "typeorm"
+import { BaseEntity, Column, Entity, Generated, OneToMany, PrimaryGeneratedColumn } from "typeorm"
 import { ReportType } from "./ReportType.entity"
+import { Report } from "./report.entity"
 
 @Entity("categories")
 export class Category extends BaseEntity {
@@ -19,4 +20,7 @@ export class Category extends BaseEntity {
         default: ReportType.PENCEGAHAN
     })
     type!: ReportType
+
+    @OneToMany(() => Report, (report) => report.category)
+    reports!: Report[]
 }

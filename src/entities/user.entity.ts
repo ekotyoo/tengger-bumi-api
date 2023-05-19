@@ -20,11 +20,6 @@ export class User extends BaseEntity {
     })
     email!: string
 
-    @Column({
-        default: false,
-    })
-    isAdmin!: boolean
-
     @Column({ select: false })
     password!: string
 
@@ -45,4 +40,13 @@ export class User extends BaseEntity {
 
     @Column({ nullable: true, default: null })
     avatar_path!: string
+
+    @Column({ default: false })
+    is_active!: boolean
+
+    @Column({ default: false })
+    is_admin!: boolean
+
+    @Column({ nullable: true, type: 'text' })
+    otp!: string | null
 }

@@ -12,7 +12,7 @@ interface RoomBody {
 }
 
 export const postSchool: RequestHandler = async (req, res, next) => {
-    const { school_name, school_address, floor_plan } = req.body;
+    const { name, address, floor_plan, centroid } = req.body;
 
     try {
         const rawImage = req.file;
@@ -29,9 +29,11 @@ export const postSchool: RequestHandler = async (req, res, next) => {
         });
 
         const newSchool = new School();
-        newSchool.name = school_name;
-        newSchool.address = school_address;
+        newSchool.name = name;
+        newSchool.address = address;
         newSchool.rooms = rooms;
+        newSchool.latitude = centroid.latitude;
+        newSchool.longitude = centroid.longitude;
         newSchool.school_analysis = new SchoolAnalysis();
 
         if (rawImage) {
@@ -60,7 +62,11 @@ export const getSchools: RequestHandler = async (req, res, next) => {
             id: school.uuid,
             name: school.name,
             address: school.address,
-            cover: school.cover_image_path,
+            image: school.cover_image_path,
+            centroid: {
+                latitude: school.latitude,
+                longitude: school.longitude
+            },
             analysis: {
                 prevention_level: school.school_analysis.prevention_level,
                 emergency_response_level: school.school_analysis.emergency_response_level,
@@ -90,6 +96,10 @@ export const getSchool: RequestHandler = async (req, res, next) => {
             name: school.name,
             address: school.address,
             image: school.cover_image_path,
+            centroid: {
+                latitude: school.latitude,
+                longitude: school.longitude
+            },
             created_at: school.created_at,
             analysis: {
                 prevention_level: school.school_analysis.prevention_level,
