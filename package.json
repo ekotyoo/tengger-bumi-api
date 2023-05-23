@@ -4,8 +4,7 @@
   "description": "",
   "main": "dist/server.js",
   "scripts": {
-    "tsc": "./node_modules/typescript/bin/tsc",
-    "postinstall": "npm run tsc",
+    "postinstall": "tsc",
     "start": "node dist/server.js",
     "start-dev": "nodemon --files src/server.ts",
     "lint": "eslint . --ext .ts",
