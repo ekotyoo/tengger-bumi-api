@@ -44,6 +44,7 @@ export const postReport: RequestHandler = async (req, res, next) => {
 
         const report = await newReport.save();
 
+        const allowEdit = report.user.uuid == user.uuid;
         req.body = {
             id: report.uuid,
             description: report.description,
@@ -53,6 +54,7 @@ export const postReport: RequestHandler = async (req, res, next) => {
             likes_count: report.likes?.filter((val) => val.is_like).length ?? 0,
             dislikes_count: report.likes?.filter((val) => !val.is_like).length ?? 0,
             comments_count: report.comments?.length,
+            allow_edit: allowEdit,
             author: {
                 id: report.user.uuid,
                 name: report.user.name,
@@ -78,7 +80,8 @@ export const postReport: RequestHandler = async (req, res, next) => {
 }
 
 export const getReports: RequestHandler = async (req, res, next) => {
-    const { type, is_active, from_timestamp, to_timestamp, school_id, user_id, author_id } = req.body;
+    const { type, is_active, from_timestamp, to_timestamp, school_id, author_id } = req.body;
+    const user_id = req.user_id;
 
     const take = parseInt(req.query.take as string) || 20;
     const page = parseInt(req.query.page as string) || 1;
@@ -128,32 +131,36 @@ export const getReports: RequestHandler = async (req, res, next) => {
 
         const [reportData, total] = data;
 
-        const reports = reportData.map((report) => <unknown>{
-            id: report.uuid,
-            description: report.description,
-            is_active: report.is_active,
-            school: report.school.name,
-            liked: report.likes?.find((val) => val.user.uuid == user_id)?.is_like,
-            likes_count: report.likes?.filter((val) => val.is_like).length ?? 0,
-            dislikes_count: report.likes?.filter((val) => !val.is_like).length ?? 0,
-            comments_count: report.comments?.length,
-            author: {
-                id: report.user.uuid,
-                name: report.user.name,
-                avatar: report.user.avatar_path
-            },
-            position: {
-                latitude: report.latitude,
-                longitude: report.longitude
-            },
-            created_at: report.created_at,
-            images: report.images.map((image) => image.file_path),
-            room: report.room.label,
-            category: {
-                id: report.category.uuid,
-                name: report.category.name,
-                type: report.category.type
-            }
+        const reports = reportData.map((report) => {
+            const allowEdit = report.user.uuid == user_id;
+            return <unknown>{
+                id: report.uuid,
+                description: report.description,
+                is_active: report.is_active,
+                school: report.school.name,
+                liked: report.likes?.find((val) => val.user.uuid == user_id)?.is_like,
+                likes_count: report.likes?.filter((val) => val.is_like).length ?? 0,
+                dislikes_count: report.likes?.filter((val) => !val.is_like).length ?? 0,
+                comments_count: report.comments?.length,
+                allow_edit: allowEdit,
+                author: {
+                    id: report.user.uuid,
+                    name: report.user.name,
+                    avatar: report.user.avatar_path
+                },
+                position: {
+                    latitude: report.latitude,
+                    longitude: report.longitude
+                },
+                created_at: report.created_at,
+                images: report.images.map((image) => image.file_path),
+                room: report.room.label,
+                category: {
+                    id: report.category.uuid,
+                    name: report.category.name,
+                    type: report.category.type
+                }
+            };
         });
 
         return res.status(200).json(paginateResponse([reports, total], page, take));
@@ -164,7 +171,7 @@ export const getReports: RequestHandler = async (req, res, next) => {
 
 export const getReport: RequestHandler = async (req, res, next) => {
     const report_id = req.params.id;
-    const user_id = req.body.user_id;
+    const user_id = req.user_id;
 
     try {
         const report = await Report.findOne({
@@ -183,6 +190,7 @@ export const getReport: RequestHandler = async (req, res, next) => {
 
         if (!report) return next(createHttpError(404, `Report with id: ${report_id} does not exists`));
 
+        const allowEdit = report.user.uuid == user_id;
         req.body = {
             id: report.uuid,
             description: report.description,
@@ -191,6 +199,7 @@ export const getReport: RequestHandler = async (req, res, next) => {
             liked: report.likes?.find((val) => val.user.uuid == user_id)?.is_like,
             likes_count: report.likes?.filter((val) => val.is_like).length ?? 0,
             dislikes_count: report.likes?.filter((val) => !val.is_like).length ?? 0,
+            allow_edit: allowEdit,
             author: {
                 id: report.user.uuid,
                 name: report.user.name,
@@ -218,20 +227,93 @@ export const getReport: RequestHandler = async (req, res, next) => {
 
 export const updateReport: RequestHandler = async (req, res, next) => {
     const id = req.params.id;
-    const { description, is_active, latitude, longitude, category } = req.body;
+    const { room_id, school_id, description, latitude, longitude, category_id, additional_infos, deleted_images } = req.body;
+    const user_id = req.user_id;
+
+    console.log(deleted_images);
 
     try {
-        const updatedReport = await Report.findOneByOrFail({ uuid: id });
+        const report = await Report.findOne({ where: { uuid: id }, relations: { images: true, user: true, likes: { user: true }, comments: true } });
+        if (!report) return next(createHttpError(400, `Report with id ${id} not found`));
 
-        if (description) updatedReport.description = description;
-        if (is_active !== undefined) updatedReport.is_active = JSON.parse((is_active as string).toLowerCase());
-        if (latitude) updatedReport.latitude = latitude;
-        if (longitude) updatedReport.longitude = longitude;
-        if (category) updatedReport.category = category;
+        const user = await User.findOneByOrFail({ uuid: user_id });
+        const room = await Room.findOneByOrFail({ uuid: room_id });
+        const school = await School.findOneByOrFail({ uuid: school_id });
+        const category = await Category.findOneByOrFail({ uuid: category_id });
 
-        const report = await updatedReport.save()
+        const imageFiles = req.files as Express.Multer.File[];
 
-        req.body = report;
+        const images = imageFiles.map((f) => {
+            const image = new Image();
+            image.file_path = f.path.replace(/\\/g, '/');
+            return image;
+        });
+
+        if (deleted_images) {
+            report.images.forEach(async (element) => {
+                const imageExist = deleted_images.includes(element.file_path);
+                if (imageExist) {
+                    await element.remove();
+                }
+            });
+        }
+
+        const oldImages = await Image.find({ where: { report: { uuid: id } } });
+
+        report.description = description;
+        report.room = room;
+        report.school = school;
+        report.latitude = latitude;
+        report.longitude = longitude;
+        report.category = category;
+        report.additional_infos = additional_infos;
+        report.images = [...oldImages, ...images];
+
+        await report.save();
+
+        const updatedReport = await Report.findOne({
+            where: { uuid: id },
+            relations: {
+                images: true,
+                user: true,
+                likes: { user: true },
+                comments: true,
+                school: true,
+                room: true,
+                category: true,
+            }
+        });
+        if (!updatedReport) return next(createHttpError(400, 'Something went wrong, try again later'));
+
+        const allowEdit = report.user.uuid == user.uuid;
+        req.body = {
+            id: updatedReport.uuid,
+            description: updatedReport.description,
+            is_active: updatedReport.is_active,
+            school: updatedReport.school.name,
+            liked: updatedReport.likes?.find((val) => val.user.uuid == user_id)?.is_like,
+            likes_count: updatedReport.likes?.filter((val) => val.is_like).length ?? 0,
+            dislikes_count: updatedReport.likes?.filter((val) => !val.is_like).length ?? 0,
+            comments_count: updatedReport.comments?.length,
+            allow_edit: allowEdit,
+            author: {
+                id: updatedReport.user.uuid,
+                name: updatedReport.user.name,
+                avatar: updatedReport.user.avatar_path
+            },
+            position: {
+                latitude: updatedReport.latitude,
+                longitude: updatedReport.longitude
+            },
+            created_at: updatedReport.created_at,
+            images: updatedReport.images.map((image) => image.file_path),
+            room: updatedReport.room.label,
+            category: {
+                id: updatedReport.category.uuid,
+                name: updatedReport.category.name,
+                type: updatedReport.category.type
+            }
+        };
         return next();
     } catch (err) {
         return next(err);
@@ -239,13 +321,13 @@ export const updateReport: RequestHandler = async (req, res, next) => {
 }
 
 export const deleteReport: RequestHandler = async (req, res, next) => {
-    const id = req.params.id;
+    const report_id = req.params.id;
 
     try {
-        const report = await Report.findOneBy({ uuid: id });
+        const report = await Report.findOneBy({ uuid: report_id });
         const result = await report?.remove();
 
-        if (!result) return next(createHttpError(404, `Report with id: "${id}" does not exists`));
+        if (!result) return next(createHttpError(404, `Report with id: "${report_id}" does not exists`));
 
         req.body = { message: "delete report success" };
         return next();

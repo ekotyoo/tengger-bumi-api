@@ -38,8 +38,8 @@ export class User extends BaseEntity {
     @UpdateDateColumn()
     updated_at!: Date
 
-    @Column({ nullable: true, default: null })
-    avatar_path!: string
+    @Column({ nullable: true, type: 'text' })
+    avatar_path!: string | null
 
     @Column({ default: false })
     is_active!: boolean

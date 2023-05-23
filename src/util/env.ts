@@ -3,7 +3,7 @@ import { cleanEnv } from "envalid";
 import { port, str } from "envalid/dist/validators";
 
 export default cleanEnv(process.env, {
-  SERVER_PORT: port(),
+  PORT: port(),
   DB_PORT: port(),
   DB_HOST: str(),
   DB_USER: str(),

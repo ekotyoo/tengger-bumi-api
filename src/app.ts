@@ -21,6 +21,9 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(express.static("public"));
 
+app.get("/", (req, res, next) => {
+  res.send("School Watch");
+});
 app.use("/api/auth", authRoutes, responseFormatter);
 app.use("/api/report", reportRoutes, responseFormatter);
 app.use("/api/comment", commentRoutes, responseFormatter);
