@@ -72,7 +72,7 @@ export const verifyUserEmail: RequestHandler = async (req, res, next) => {
 export const signInWithToken: RequestHandler = async (req, res, next) => {
   try {
     const user = await User.findOne({
-      where: { uuid: req.body.user_id }
+      where: { id: req.body.user_id }
     });
 
     if (!user) {
@@ -84,7 +84,7 @@ export const signInWithToken: RequestHandler = async (req, res, next) => {
     }
 
     req.body = {
-      id: user.uuid,
+      id: user.id,
       name: user.name,
       email: user.email,
       is_admin: user.is_admin,
@@ -102,7 +102,7 @@ export const signIn: RequestHandler = async (req, res, next) => {
   try {
     const user = await User.findOne({
       where: { email: signInBody.email },
-      select: { password: true, uuid: true, name: true, email: true, is_admin: true, is_active: true, avatar_path: true }
+      select: { password: true, id: true, name: true, email: true, is_admin: true, is_active: true, avatar_path: true }
     });
 
     if (!user) {
@@ -111,7 +111,7 @@ export const signIn: RequestHandler = async (req, res, next) => {
 
     if (!user.is_active) {
       req.body = {
-        id: user.uuid,
+        id: user.id,
         name: user.name,
         email: user.email,
         is_admin: user.is_admin,
@@ -122,10 +122,10 @@ export const signIn: RequestHandler = async (req, res, next) => {
     }
 
     if (await compare(signInBody.password, user.password)) {
-      const token = encode(user.uuid);
+      const token = encode(user.id);
 
       req.body = {
-        id: user.uuid,
+        id: user.id,
         name: user.name,
         email: user.email,
         is_admin: user.is_admin,

@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, Generated, CreateDateColumn, UpdateDateColumn, BaseEntity, OneToMany } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, BaseEntity, OneToMany } from "typeorm";
 import { Report } from "./report.entity";
 import { Comment } from "./comment.entity";
 import { Like } from "./like.entity";
@@ -7,10 +7,6 @@ import { Like } from "./like.entity";
 export class User extends BaseEntity {
     @PrimaryGeneratedColumn()
     id!: number
-
-    @Column()
-    @Generated("uuid")
-    uuid!: string
 
     @Column()
     name!: string

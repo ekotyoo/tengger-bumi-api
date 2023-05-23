@@ -15,10 +15,10 @@ export const postReport: RequestHandler = async (req, res, next) => {
     const user_id = req.user_id;
 
     try {
-        const user = await User.findOneByOrFail({ uuid: user_id });
-        const category = await Category.findOneByOrFail({ uuid: category_id });
-        const room = await Room.findOneByOrFail({ uuid: room_id });
-        const school = await School.findOneByOrFail({ uuid: school_id });
+        const user = await User.findOneByOrFail({ id: user_id });
+        const category = await Category.findOneByOrFail({ id: category_id });
+        const room = await Room.findOneByOrFail({ id: room_id });
+        const school = await School.findOneByOrFail({ id: school_id });
 
         const imageFiles = req.files as Express.Multer.File[];
 
@@ -44,19 +44,19 @@ export const postReport: RequestHandler = async (req, res, next) => {
 
         const report = await newReport.save();
 
-        const allowEdit = report.user.uuid == user.uuid;
+        const allowEdit = report.user.id == user.id;
         req.body = {
-            id: report.uuid,
+            id: report.id,
             description: report.description,
             is_active: report.is_active,
             school: report.school.name,
-            liked: report.likes?.find((val) => val.user.uuid == user_id)?.is_like,
+            liked: report.likes?.find((val) => val.user.id == user_id)?.is_like,
             likes_count: report.likes?.filter((val) => val.is_like).length ?? 0,
             dislikes_count: report.likes?.filter((val) => !val.is_like).length ?? 0,
             comments_count: report.comments?.length,
             allow_edit: allowEdit,
             author: {
-                id: report.user.uuid,
+                id: report.user.id,
                 name: report.user.name,
                 avatar: report.user.avatar_path
             },
@@ -68,7 +68,7 @@ export const postReport: RequestHandler = async (req, res, next) => {
             images: report.images.map((image) => image.file_path),
             room: report.room.label,
             category: {
-                id: report.category.uuid,
+                id: report.category.id,
                 name: report.category.name,
                 type: report.category.type
             }
@@ -107,10 +107,10 @@ export const getReports: RequestHandler = async (req, res, next) => {
                 is_active: is_active,
                 created_at: createdAtQuery,
                 school: {
-                    uuid: school_id
+                    id: school_id
                 },
                 user: {
-                    uuid: author_id,
+                    id: author_id,
                 }
             },
             relations: {
@@ -132,19 +132,19 @@ export const getReports: RequestHandler = async (req, res, next) => {
         const [reportData, total] = data;
 
         const reports = reportData.map((report) => {
-            const allowEdit = report.user.uuid == user_id;
+            const allowEdit = report.user.id == user_id;
             return <unknown>{
-                id: report.uuid,
+                id: report.id,
                 description: report.description,
                 is_active: report.is_active,
                 school: report.school.name,
-                liked: report.likes?.find((val) => val.user.uuid == user_id)?.is_like,
+                liked: report.likes?.find((val) => val.user.id == user_id)?.is_like,
                 likes_count: report.likes?.filter((val) => val.is_like).length ?? 0,
                 dislikes_count: report.likes?.filter((val) => !val.is_like).length ?? 0,
                 comments_count: report.comments?.length,
                 allow_edit: allowEdit,
                 author: {
-                    id: report.user.uuid,
+                    id: report.user.id,
                     name: report.user.name,
                     avatar: report.user.avatar_path
                 },
@@ -156,7 +156,7 @@ export const getReports: RequestHandler = async (req, res, next) => {
                 images: report.images.map((image) => image.file_path),
                 room: report.room.label,
                 category: {
-                    id: report.category.uuid,
+                    id: report.category.id,
                     name: report.category.name,
                     type: report.category.type
                 }
@@ -170,12 +170,12 @@ export const getReports: RequestHandler = async (req, res, next) => {
 }
 
 export const getReport: RequestHandler = async (req, res, next) => {
-    const report_id = req.params.id;
+    const report_id = Number(req.params.id);
     const user_id = req.user_id;
 
     try {
         const report = await Report.findOne({
-            where: { uuid: report_id },
+            where: { id: report_id },
             relations: {
                 user: true,
                 images: true,
@@ -190,18 +190,18 @@ export const getReport: RequestHandler = async (req, res, next) => {
 
         if (!report) return next(createHttpError(404, `Report with id: ${report_id} does not exists`));
 
-        const allowEdit = report.user.uuid == user_id;
+        const allowEdit = report.user.id == user_id;
         req.body = {
-            id: report.uuid,
+            id: report.id,
             description: report.description,
             is_active: report.is_active,
             school: report.school.name,
-            liked: report.likes?.find((val) => val.user.uuid == user_id)?.is_like,
+            liked: report.likes?.find((val) => val.user.id == user_id)?.is_like,
             likes_count: report.likes?.filter((val) => val.is_like).length ?? 0,
             dislikes_count: report.likes?.filter((val) => !val.is_like).length ?? 0,
             allow_edit: allowEdit,
             author: {
-                id: report.user.uuid,
+                id: report.user.id,
                 name: report.user.name,
                 avatar: report.user.avatar_path
             },
@@ -213,7 +213,7 @@ export const getReport: RequestHandler = async (req, res, next) => {
             images: report.images.map((image) => image.file_path),
             room: report.room.label,
             category: {
-                id: report.category.uuid,
+                id: report.category.id,
                 name: report.category.name,
                 type: report.category.type
             },
@@ -226,20 +226,20 @@ export const getReport: RequestHandler = async (req, res, next) => {
 }
 
 export const updateReport: RequestHandler = async (req, res, next) => {
-    const id = req.params.id;
+    const id = Number(req.params.id);
     const { room_id, school_id, description, latitude, longitude, category_id, additional_infos, deleted_images } = req.body;
     const user_id = req.user_id;
 
     console.log(deleted_images);
 
     try {
-        const report = await Report.findOne({ where: { uuid: id }, relations: { images: true, user: true, likes: { user: true }, comments: true } });
+        const report = await Report.findOne({ where: { id: id }, relations: { images: true, user: true, likes: { user: true }, comments: true } });
         if (!report) return next(createHttpError(400, `Report with id ${id} not found`));
 
-        const user = await User.findOneByOrFail({ uuid: user_id });
-        const room = await Room.findOneByOrFail({ uuid: room_id });
-        const school = await School.findOneByOrFail({ uuid: school_id });
-        const category = await Category.findOneByOrFail({ uuid: category_id });
+        const user = await User.findOneByOrFail({ id: user_id });
+        const room = await Room.findOneByOrFail({ id: room_id });
+        const school = await School.findOneByOrFail({ id: school_id });
+        const category = await Category.findOneByOrFail({ id: category_id });
 
         const imageFiles = req.files as Express.Multer.File[];
 
@@ -258,7 +258,7 @@ export const updateReport: RequestHandler = async (req, res, next) => {
             });
         }
 
-        const oldImages = await Image.find({ where: { report: { uuid: id } } });
+        const oldImages = await Image.find({ where: { report: { id: id } } });
 
         report.description = description;
         report.room = room;
@@ -272,7 +272,7 @@ export const updateReport: RequestHandler = async (req, res, next) => {
         await report.save();
 
         const updatedReport = await Report.findOne({
-            where: { uuid: id },
+            where: { id: id },
             relations: {
                 images: true,
                 user: true,
@@ -285,19 +285,19 @@ export const updateReport: RequestHandler = async (req, res, next) => {
         });
         if (!updatedReport) return next(createHttpError(400, 'Something went wrong, try again later'));
 
-        const allowEdit = report.user.uuid == user.uuid;
+        const allowEdit = report.user.id == user.id;
         req.body = {
-            id: updatedReport.uuid,
+            id: updatedReport.id,
             description: updatedReport.description,
             is_active: updatedReport.is_active,
             school: updatedReport.school.name,
-            liked: updatedReport.likes?.find((val) => val.user.uuid == user_id)?.is_like,
+            liked: updatedReport.likes?.find((val) => val.user.id == user_id)?.is_like,
             likes_count: updatedReport.likes?.filter((val) => val.is_like).length ?? 0,
             dislikes_count: updatedReport.likes?.filter((val) => !val.is_like).length ?? 0,
             comments_count: updatedReport.comments?.length,
             allow_edit: allowEdit,
             author: {
-                id: updatedReport.user.uuid,
+                id: updatedReport.user.id,
                 name: updatedReport.user.name,
                 avatar: updatedReport.user.avatar_path
             },
@@ -309,7 +309,7 @@ export const updateReport: RequestHandler = async (req, res, next) => {
             images: updatedReport.images.map((image) => image.file_path),
             room: updatedReport.room.label,
             category: {
-                id: updatedReport.category.uuid,
+                id: updatedReport.category.id,
                 name: updatedReport.category.name,
                 type: updatedReport.category.type
             }
@@ -321,10 +321,10 @@ export const updateReport: RequestHandler = async (req, res, next) => {
 }
 
 export const deleteReport: RequestHandler = async (req, res, next) => {
-    const report_id = req.params.id;
+    const report_id = Number(req.params.id);
 
     try {
-        const report = await Report.findOneBy({ uuid: report_id });
+        const report = await Report.findOneBy({ id: report_id });
         const result = await report?.remove();
 
         if (!result) return next(createHttpError(404, `Report with id: "${report_id}" does not exists`));
@@ -338,12 +338,12 @@ export const deleteReport: RequestHandler = async (req, res, next) => {
 
 export const postLike: RequestHandler = async (req, res, next) => {
     const { user_id, is_like } = req.body;
-    const report_id = req.params.id;
+    const report_id = Number(req.params.id);
     try {
-        const report = await Report.findOneByOrFail({ uuid: report_id });
-        const user = await User.findOneByOrFail({ uuid: user_id });
+        const report = await Report.findOneByOrFail({ id: report_id });
+        const user = await User.findOneByOrFail({ id: user_id });
 
-        const oldLike = await Like.findOne({ where: { user: { uuid: user_id }, report: { uuid: report_id } } });
+        const oldLike = await Like.findOne({ where: { user: { id: user_id }, report: { id: report_id } } });
         let like = new Like();
 
         if (oldLike) {
@@ -364,9 +364,9 @@ export const postLike: RequestHandler = async (req, res, next) => {
         const newLike = await like.save();
 
         req.body = {
-            id: newLike.uuid,
-            user_id: newLike.user.uuid,
-            report_id: newLike.report.uuid
+            id: newLike.id,
+            user_id: newLike.user.id,
+            report_id: newLike.report.id
         }
 
         return next();
@@ -377,9 +377,9 @@ export const postLike: RequestHandler = async (req, res, next) => {
 
 export const deleteLike: RequestHandler = async (req, res, next) => {
     const user_id = req.body.user_id;
-    const report_id = req.params.id;
+    const report_id = Number(req.params.id);
     try {
-        const like = await Like.findOneOrFail({ where: { user: { uuid: user_id }, report: { uuid: report_id } } });
+        const like = await Like.findOneOrFail({ where: { user: { id: user_id }, report: { id: report_id } } });
         await like.remove();
 
         req.body = {

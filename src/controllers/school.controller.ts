@@ -59,7 +59,7 @@ export const getSchools: RequestHandler = async (req, res, next) => {
             }
         });
         const schools = data.map((school) => <unknown>{
-            id: school.uuid,
+            id: school.id,
             name: school.name,
             address: school.address,
             image: school.cover_image_path,
@@ -83,16 +83,16 @@ export const getSchools: RequestHandler = async (req, res, next) => {
 
 export const getSchool: RequestHandler = async (req, res, next) => {
     try {
-        const id = req.params.id;
+        const id = Number(req.params.id);
         const school = await School.findOne({
-            where: { uuid: id },
+            where: { id: id },
             relations: { school_analysis: true, rooms: true },
         });
 
         if (!school) return next(createHttpError(404, `Report with id: ${id} does not exists`));
 
         req.body = {
-            id: school.uuid,
+            id: school.id,
             name: school.name,
             address: school.address,
             image: school.cover_image_path,
@@ -108,7 +108,7 @@ export const getSchool: RequestHandler = async (req, res, next) => {
             },
             floor_plan: {
                 rooms: school.rooms.map((r) => <unknown>{
-                    id: r.uuid,
+                    id: r.id,
                     label: r.label,
                     color: r.color,
                     polygon: r.polygon,

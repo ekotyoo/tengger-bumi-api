@@ -1,4 +1,4 @@
-import { BaseEntity, Column, CreateDateColumn, Entity, Generated, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm"
+import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm"
 import { Report } from "./report.entity"
 import { User } from "./user.entity"
 
@@ -6,10 +6,6 @@ import { User } from "./user.entity"
 export class Comment extends BaseEntity {
     @PrimaryGeneratedColumn()
     id!: number
-
-    @Column()
-    @Generated("uuid")
-    uuid!: string
 
     @Column()
     comment!: string

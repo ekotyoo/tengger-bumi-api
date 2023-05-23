@@ -1,4 +1,4 @@
-import { Entity, BaseEntity, Column, PrimaryGeneratedColumn, Generated, OneToMany, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import { Entity, BaseEntity, Column, PrimaryGeneratedColumn, OneToMany, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from "typeorm";
 import { Image } from "./image.entity";
 import { User } from "./user.entity";
 import { School } from "./school.entity";
@@ -11,10 +11,6 @@ import { Like } from "./like.entity";
 export class Report extends BaseEntity {
     @PrimaryGeneratedColumn()
     id!: number
-
-    @Column()
-    @Generated("uuid")
-    uuid!: string
 
     @Column()
     is_active!: boolean

@@ -1,4 +1,4 @@
-import { BaseEntity, Column, CreateDateColumn, Entity, Generated, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { School } from "./school.entity";
 import { Report } from "./report.entity";
 
@@ -6,10 +6,6 @@ import { Report } from "./report.entity";
 export class Room extends BaseEntity {
     @PrimaryGeneratedColumn()
     id!: number
-
-    @Column()
-    @Generated("uuid")
-    uuid!: string
 
     @Column()
     label!: string

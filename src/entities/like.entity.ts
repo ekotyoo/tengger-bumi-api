@@ -1,4 +1,4 @@
-import { BaseEntity, Column, Entity, Generated, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Report } from "./report.entity";
 import { User } from "./user.entity";
 
@@ -6,10 +6,6 @@ import { User } from "./user.entity";
 export class Like extends BaseEntity {
     @PrimaryGeneratedColumn()
     id!: number
-
-    @Column()
-    @Generated("uuid")
-    uuid!: string
 
     @Column({ default: true })
     is_like!: boolean

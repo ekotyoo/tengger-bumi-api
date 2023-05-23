@@ -26,7 +26,7 @@ export const getCategories: RequestHandler = async (req, res, next) => {
     try {
         const data = await Category.find({ where: { type: query as ReportType } });
         const categories = data.map((category) => <unknown>{
-            id: category.uuid,
+            id: category.id,
             name: category.name,
             type: category.type
         });

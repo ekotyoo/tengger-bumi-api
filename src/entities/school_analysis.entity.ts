@@ -1,14 +1,10 @@
-import { BaseEntity, Column, CreateDateColumn, Entity, Generated, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { BaseEntity, Column, CreateDateColumn, Entity, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { School } from "./school.entity";
 
 @Entity("school_analysis")
 export class SchoolAnalysis extends BaseEntity {
     @PrimaryGeneratedColumn()
     id!: number
-
-    @Column()
-    @Generated("uuid")
-    uuid!: string
 
     @Column({ nullable: true, default: null })
     prevention_level!: number

@@ -9,8 +9,8 @@ export const postComment: RequestHandler = async (req, res, next) => {
         const { comment, report_id } = req.body;
         const user_id = req.user_id;
 
-        const author = await User.findOneByOrFail({ uuid: user_id });
-        const report = await Report.findOneByOrFail({ uuid: report_id });
+        const author = await User.findOneByOrFail({ id: user_id });
+        const report = await Report.findOneByOrFail({ id: report_id });
 
         const newComment = new Comment();
         newComment.author = author;
@@ -18,14 +18,14 @@ export const postComment: RequestHandler = async (req, res, next) => {
         newComment.comment = comment;
 
         const commentResult = await newComment.save();
-        const allowEdit = commentResult.author.uuid == user_id;
+        const allowEdit = commentResult.author.id == user_id;
         req.body = {
-            id: commentResult.uuid,
+            id: commentResult.id,
             comment: commentResult.comment,
             allow_edit: allowEdit,
             created_at: commentResult.created_at,
             author: {
-                id: commentResult.author.uuid,
+                id: commentResult.author.id,
                 name: commentResult.author.name,
                 avatar: commentResult.author.avatar_path
             }
@@ -39,10 +39,10 @@ export const postComment: RequestHandler = async (req, res, next) => {
 
 export const deleteComment: RequestHandler = async (req, res, next) => {
     try {
-        const report_id = req.params.report_id;
-        const comment_id = req.params.comment_id;
+        const report_id = Number(req.params.report_id);
+        const comment_id = Number(req.params.comment_id);
 
-        const comment = await Comment.findOneBy({ uuid: comment_id, report: { uuid: report_id } });
+        const comment = await Comment.findOneBy({ id: comment_id, report: { id: report_id } });
         const result = await comment?.remove();
 
         if (!result) return next(createHttpError(404, `Comment with id: "${comment_id}" does not exists`));
@@ -58,20 +58,20 @@ export const getComments: RequestHandler = async (req, res, next) => {
         const reportId = req.body.report_id;
         const user_id = req.user_id;
         const data = await Comment.find({
-            where: { report: { uuid: reportId } },
+            where: { report: { id: reportId } },
             relations: { author: true },
             order: { created_at: "DESC" }
         });
 
         const comments = data.map((comment) => {
-            const allowEdit = comment.author.uuid == user_id;
+            const allowEdit = comment.author.id == user_id;
             return <unknown>{
-                id: comment.uuid,
+                id: comment.id,
                 comment: comment.comment,
                 created_at: comment.created_at,
                 allow_edit: allowEdit,
                 author: {
-                    id: comment.author.uuid,
+                    id: comment.author.id,
                     name: comment.author.name,
                     avatar: comment.author.avatar_path
                 }
