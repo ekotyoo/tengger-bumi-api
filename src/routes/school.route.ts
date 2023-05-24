@@ -11,5 +11,6 @@ router.use(requiresAuth);
 router.post("/", upload.single("image"), schoolValidator, SchoolController.postSchool);
 router.get("/", SchoolController.getSchools);
 router.get("/:id", SchoolController.getSchool);
+router.put("/:id", upload.single("image"), SchoolController.updateSchool);
 
 export default router;

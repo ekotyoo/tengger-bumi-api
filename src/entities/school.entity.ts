@@ -20,8 +20,8 @@ export class School extends BaseEntity {
     @Column("double")
     longitude!: number
 
-    @Column({ nullable: true, default: null })
-    cover_image_path!: string
+    @Column({ nullable: true, default: null, type: "text" })
+    cover_image_path!: string | null
 
     @CreateDateColumn()
     created_at!: Date

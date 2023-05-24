@@ -4,6 +4,7 @@ import { Room } from "../entities/room.entity";
 import { SchoolAnalysis } from "../entities/school_analysis.entity";
 import { Like } from "typeorm";
 import createHttpError from "http-errors";
+import { User } from "../entities/user.entity";
 
 interface RoomBody {
     label: string
@@ -17,11 +18,8 @@ export const postSchool: RequestHandler = async (req, res, next) => {
     try {
         const rawImage = req.file;
 
-        console.log(rawImage);
-
         const rooms = (floor_plan.rooms as RoomBody[]).map((r) => {
             const room = new Room();
-            console.log(r);
             room.label = r.label;
             room.color = r.color;
             room.polygon = r.polygon;
@@ -49,9 +47,53 @@ export const postSchool: RequestHandler = async (req, res, next) => {
     }
 };
 
+export const updateSchool: RequestHandler = async (req, res, next) => {
+    const { name, address } = req.body;
+    const id = Number(req.params.id);
+
+    try {
+        const school = await School.findOne({ where: { id: id }, relations: { school_analysis: true } });
+        if (!school) return next(createHttpError(400, `School with id ${id} does not exists`));
+
+        const rawImage = req.file;
+        if (rawImage) {
+            school.cover_image_path = rawImage.path.replace(/\\/g, '/');
+        } else {
+            school.cover_image_path = null;
+        }
+        school.name = name;
+        school.address = address;
+
+        const updatedSchool = await school.save()
+
+        req.body = {
+            id: updatedSchool.id,
+            name: updatedSchool.name,
+            address: updatedSchool.address,
+            image: updatedSchool.cover_image_path,
+            centroid: {
+                latitude: updatedSchool.latitude,
+                longitude: updatedSchool.longitude
+            },
+            analysis: {
+                prevention_level: updatedSchool.school_analysis.prevention_level,
+                emergency_response_level: updatedSchool.school_analysis.emergency_response_level,
+                recovery_level: updatedSchool.school_analysis.recovery_level
+            },
+            created_at: updatedSchool.created_at,
+        }
+        next();
+    } catch (err) {
+        return next(err);
+    }
+}
+
 export const getSchools: RequestHandler = async (req, res, next) => {
     try {
         const query = req.query.name ?? '';
+        const user_id = req.user_id;
+
+        const user = await User.findOneByOrFail({ id: user_id });
 
         const data = await School.find({
             relations: { school_analysis: true }, where: {
@@ -73,6 +115,7 @@ export const getSchools: RequestHandler = async (req, res, next) => {
                 recovery_level: school.school_analysis.recovery_level
             },
             created_at: school.created_at,
+            allow_edit: user.is_admin,
         });
         req.body = schools;
         next();
@@ -84,6 +127,9 @@ export const getSchools: RequestHandler = async (req, res, next) => {
 export const getSchool: RequestHandler = async (req, res, next) => {
     try {
         const id = Number(req.params.id);
+        const user_id = req.user_id;
+
+        const user = await User.findOneByOrFail({ id: user_id });
         const school = await School.findOne({
             where: { id: id },
             relations: { school_analysis: true, rooms: true },
@@ -114,6 +160,7 @@ export const getSchool: RequestHandler = async (req, res, next) => {
                     polygon: r.polygon,
                 }),
             },
+            allow_edit: user.is_admin,
         };
         next();
     } catch (err) {

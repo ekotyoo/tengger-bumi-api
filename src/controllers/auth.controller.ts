@@ -70,6 +70,7 @@ export const verifyUserEmail: RequestHandler = async (req, res, next) => {
 }
 
 export const signInWithToken: RequestHandler = async (req, res, next) => {
+  // return next(createHttpError(500, 'User not found'));
   try {
     const user = await User.findOne({
       where: { id: req.body.user_id }
