@@ -5,6 +5,9 @@ import { SchoolAnalysis } from "../entities/school_analysis.entity";
 import { Like } from "typeorm";
 import createHttpError from "http-errors";
 import { User } from "../entities/user.entity";
+import { Report } from "../entities/report.entity";
+import { Category } from "../entities/category.entity";
+import { ReportType } from "../entities/ReportType.entity";
 
 interface RoomBody {
     label: string
@@ -48,18 +51,20 @@ export const postSchool: RequestHandler = async (req, res, next) => {
 };
 
 export const updateSchool: RequestHandler = async (req, res, next) => {
-    const { name, address } = req.body;
+    const { name, address, deleted_cover } = req.body;
     const id = Number(req.params.id);
 
     try {
         const school = await School.findOne({ where: { id: id }, relations: { school_analysis: true } });
         if (!school) return next(createHttpError(400, `School with id ${id} does not exists`));
 
+        if (deleted_cover) {
+            school.cover_image_path = null;
+        }
+
         const rawImage = req.file;
         if (rawImage) {
             school.cover_image_path = rawImage.path.replace(/\\/g, '/');
-        } else {
-            school.cover_image_path = null;
         }
         school.name = name;
         school.address = address;
@@ -70,7 +75,7 @@ export const updateSchool: RequestHandler = async (req, res, next) => {
             id: updatedSchool.id,
             name: updatedSchool.name,
             address: updatedSchool.address,
-            image: updatedSchool.cover_image_path,
+            image: updatedSchool.cover_image_path ?? undefined,
             centroid: {
                 latitude: updatedSchool.latitude,
                 longitude: updatedSchool.longitude
@@ -100,24 +105,25 @@ export const getSchools: RequestHandler = async (req, res, next) => {
                 name: Like(`%${query}%`)
             }
         });
-        const schools = data.map((school) => <unknown>{
-            id: school.id,
-            name: school.name,
-            address: school.address,
-            image: school.cover_image_path,
-            centroid: {
-                latitude: school.latitude,
-                longitude: school.longitude
-            },
-            analysis: {
-                prevention_level: school.school_analysis.prevention_level,
-                emergency_response_level: school.school_analysis.emergency_response_level,
-                recovery_level: school.school_analysis.recovery_level
-            },
-            created_at: school.created_at,
-            allow_edit: user.is_admin,
-        });
+
+        const schools = await Promise.all(data.map(async (school) => {
+            const schoolAnalysis = await calculateSchoolAnalysis(school);
+            return <unknown>{
+                id: school.id,
+                name: school.name,
+                address: school.address,
+                image: school.cover_image_path,
+                centroid: {
+                    latitude: school.latitude,
+                    longitude: school.longitude
+                },
+                analysis: schoolAnalysis,
+                created_at: school.created_at,
+                allow_edit: user.is_admin,
+            };
+        }));
         req.body = schools;
+
         next();
     } catch (err) {
         next(err);
@@ -132,10 +138,14 @@ export const getSchool: RequestHandler = async (req, res, next) => {
         const user = await User.findOneByOrFail({ id: user_id });
         const school = await School.findOne({
             where: { id: id },
-            relations: { school_analysis: true, rooms: true },
+            relations: { school_analysis: true, rooms: true, reports: true },
         });
 
         if (!school) return next(createHttpError(404, `Report with id: ${id} does not exists`));
+
+        const schoolAnalysis = await calculateSchoolAnalysis(school);
+
+        console.log(schoolAnalysis);
 
         req.body = {
             id: school.id,
@@ -147,11 +157,7 @@ export const getSchool: RequestHandler = async (req, res, next) => {
                 longitude: school.longitude
             },
             created_at: school.created_at,
-            analysis: {
-                prevention_level: school.school_analysis.prevention_level,
-                emergency_response_level: school.school_analysis.emergency_response_level,
-                recovery_level: school.school_analysis.recovery_level
-            },
+            analysis: schoolAnalysis,
             floor_plan: {
                 rooms: school.rooms.map((r) => <unknown>{
                     id: r.id,
@@ -166,4 +172,34 @@ export const getSchool: RequestHandler = async (req, res, next) => {
     } catch (err) {
         next(err);
     }
+}
+
+const calculateSchoolAnalysis = async (school: School) => {
+    const allCategories = await Category.find();
+    const pencegahanCategoriesCount = allCategories.filter((val) => { return val.type == ReportType.PENCEGAHAN }).length;
+    const eksistingCategoriesCount = allCategories.filter((val) => { return val.type == ReportType.EXISTING }).length;
+    const dampakCategoriesCount = allCategories.filter((val) => { return val.type == ReportType.DAMPAK }).length;
+
+    const schoolReports = await Report.find({
+        where: {
+            school: { id: school.id },
+        },
+        relations: {
+            category: true,
+        }
+    });
+
+    const pencegahanFulfilledCount = [... new Set(schoolReports.filter((val) => { return val.category.type == ReportType.PENCEGAHAN }).map((val) => { return val.category.id }))].length;
+    const eksistingFulfilledCount = [... new Set(schoolReports.filter((val) => { return val.category.type == ReportType.EXISTING }).map((val) => { return val.category.id }))].length;
+    const dampakFulfilledCount = [... new Set(schoolReports.filter((val) => { return val.category.type == ReportType.DAMPAK }).map((val) => { return val.category.id }))].length;
+
+    const pencegahanScore = pencegahanCategoriesCount == 0 ? 0 : (pencegahanFulfilledCount / pencegahanCategoriesCount);
+    const tanggapDaruratScore = eksistingCategoriesCount == 0 ? 0 : (eksistingFulfilledCount / eksistingCategoriesCount);
+    const pemulihanScore = dampakCategoriesCount == 0 ? 0 : (dampakFulfilledCount / dampakCategoriesCount);
+
+    return {
+        prevention_level: pencegahanScore,
+        emergency_response_level: tanggapDaruratScore,
+        recovery_level: pemulihanScore
+    };
 }

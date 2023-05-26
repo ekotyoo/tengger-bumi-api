@@ -227,10 +227,10 @@ export const getReport: RequestHandler = async (req, res, next) => {
 
 export const updateReport: RequestHandler = async (req, res, next) => {
     const id = Number(req.params.id);
-    const { room_id, school_id, description, latitude, longitude, category_id, additional_infos, deleted_images } = req.body;
-    const user_id = req.user_id;
+    const { room_id, school_id, description, latitude, longitude, category_id, additional_infos, deleted_images, is_active } = req.body;
+    console.log(req.body);
 
-    console.log(deleted_images);
+    const user_id = req.user_id;
 
     try {
         const report = await Report.findOne({ where: { id: id }, relations: { images: true, user: true, likes: { user: true }, comments: true } });
@@ -268,6 +268,7 @@ export const updateReport: RequestHandler = async (req, res, next) => {
         report.category = category;
         report.additional_infos = additional_infos;
         report.images = [...oldImages, ...images];
+        report.is_active = is_active == 'true';
 
         await report.save();
 
