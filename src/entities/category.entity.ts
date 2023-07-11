@@ -17,6 +17,9 @@ export class Category extends BaseEntity {
     })
     type!: ReportType
 
+    @Column()
+    is_analysis!: boolean
+
     @OneToMany(() => Report, (report) => report.category)
     reports!: Report[]
 }

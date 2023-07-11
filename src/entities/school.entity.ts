@@ -1,5 +1,4 @@
-import { PrimaryGeneratedColumn, Column, JoinColumn, Entity, BaseEntity, CreateDateColumn, OneToOne, OneToMany, UpdateDateColumn } from "typeorm";
-import { SchoolAnalysis } from "./school_analysis.entity";
+import { PrimaryGeneratedColumn, Column, Entity, BaseEntity, CreateDateColumn, OneToMany, UpdateDateColumn } from "typeorm";
 import { Report } from "./report.entity";
 import { Room } from "./room.entity";
 
@@ -28,10 +27,6 @@ export class School extends BaseEntity {
 
     @UpdateDateColumn()
     updated_at!: Date
-
-    @OneToOne(() => SchoolAnalysis, { "cascade": ["insert"] })
-    @JoinColumn()
-    school_analysis!: SchoolAnalysis
 
     @OneToMany(() => Report, (report) => report.school)
     reports!: Report[]

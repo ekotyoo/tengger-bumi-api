@@ -3,13 +3,14 @@ import { Category } from "../entities/category.entity";
 import { ReportType } from "../entities/ReportType.entity";
 
 export const postCategory: RequestHandler = async (req, res, next) => {
-    const { name, type } = req.body;
+    const { name, type, is_analysis } = req.body;
     console.log(req.body);
 
     try {
         const newCategory = new Category();
         newCategory.name = name;
         newCategory.type = type as ReportType;
+        newCategory.is_analysis = is_analysis == 'true' || is_analysis == true;
 
         const category = await newCategory.save();
 

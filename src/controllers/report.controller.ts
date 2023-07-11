@@ -212,6 +212,7 @@ export const getReport: RequestHandler = async (req, res, next) => {
             created_at: report.created_at,
             images: report.images.map((image) => image.file_path),
             room: report.room.label,
+            room_id: report.room.id,
             category: {
                 id: report.category.id,
                 name: report.category.name,

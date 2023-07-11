@@ -1,7 +1,6 @@
 import { RequestHandler } from "express";
 import { School } from "../entities/school.entity";
 import { Room } from "../entities/room.entity";
-import { SchoolAnalysis } from "../entities/school_analysis.entity";
 import { Like } from "typeorm";
 import createHttpError from "http-errors";
 import { User } from "../entities/user.entity";
@@ -35,7 +34,6 @@ export const postSchool: RequestHandler = async (req, res, next) => {
         newSchool.rooms = rooms;
         newSchool.latitude = centroid.latitude;
         newSchool.longitude = centroid.longitude;
-        newSchool.school_analysis = new SchoolAnalysis();
 
         if (rawImage) {
             newSchool.cover_image_path = rawImage.path.replace(/\\/g, '/');
@@ -55,7 +53,7 @@ export const updateSchool: RequestHandler = async (req, res, next) => {
     const id = Number(req.params.id);
 
     try {
-        const school = await School.findOne({ where: { id: id }, relations: { school_analysis: true } });
+        const school = await School.findOne({ where: { id: id } });
         if (!school) return next(createHttpError(400, `School with id ${id} does not exists`));
 
         if (deleted_cover) {
@@ -69,7 +67,8 @@ export const updateSchool: RequestHandler = async (req, res, next) => {
         school.name = name;
         school.address = address;
 
-        const updatedSchool = await school.save()
+        const updatedSchool = await school.save();
+        const schoolAnalysis = await calculateSchoolAnalysis(updatedSchool);
 
         req.body = {
             id: updatedSchool.id,
@@ -81,9 +80,9 @@ export const updateSchool: RequestHandler = async (req, res, next) => {
                 longitude: updatedSchool.longitude
             },
             analysis: {
-                prevention_level: updatedSchool.school_analysis.prevention_level,
-                emergency_response_level: updatedSchool.school_analysis.emergency_response_level,
-                recovery_level: updatedSchool.school_analysis.recovery_level
+                prevention_level: schoolAnalysis.prevention_level,
+                emergency_response_level: schoolAnalysis.emergency_response_level,
+                recovery_level: schoolAnalysis.recovery_level
             },
             created_at: updatedSchool.created_at,
         }
@@ -101,7 +100,7 @@ export const getSchools: RequestHandler = async (req, res, next) => {
         const user = await User.findOneByOrFail({ id: user_id });
 
         const data = await School.find({
-            relations: { school_analysis: true }, where: {
+            where: {
                 name: Like(`%${query}%`)
             }
         });
@@ -138,7 +137,7 @@ export const getSchool: RequestHandler = async (req, res, next) => {
         const user = await User.findOneByOrFail({ id: user_id });
         const school = await School.findOne({
             where: { id: id },
-            relations: { school_analysis: true, rooms: true, reports: true },
+            relations: { rooms: true, reports: true },
         });
 
         if (!school) return next(createHttpError(404, `Report with id: ${id} does not exists`));
@@ -176,9 +175,9 @@ export const getSchool: RequestHandler = async (req, res, next) => {
 
 const calculateSchoolAnalysis = async (school: School) => {
     const allCategories = await Category.find();
-    const pencegahanCategoriesCount = allCategories.filter((val) => { return val.type == ReportType.PENCEGAHAN }).length;
-    const eksistingCategoriesCount = allCategories.filter((val) => { return val.type == ReportType.EXISTING }).length;
-    const dampakCategoriesCount = allCategories.filter((val) => { return val.type == ReportType.DAMPAK }).length;
+    const pencegahanCategoriesCount = allCategories.filter((val) => { return val.type == ReportType.PENCEGAHAN && val.is_analysis == true }).length;
+    const eksistingCategoriesCount = allCategories.filter((val) => { return val.type == ReportType.EXISTING && val.is_analysis == true }).length;
+    const dampakCategoriesCount = allCategories.filter((val) => { return val.type == ReportType.DAMPAK && val.is_analysis == true }).length;
 
     const schoolReports = await Report.find({
         where: {
@@ -189,9 +188,9 @@ const calculateSchoolAnalysis = async (school: School) => {
         }
     });
 
-    const pencegahanFulfilledCount = [... new Set(schoolReports.filter((val) => { return val.category.type == ReportType.PENCEGAHAN }).map((val) => { return val.category.id }))].length;
-    const eksistingFulfilledCount = [... new Set(schoolReports.filter((val) => { return val.category.type == ReportType.EXISTING }).map((val) => { return val.category.id }))].length;
-    const dampakFulfilledCount = [... new Set(schoolReports.filter((val) => { return val.category.type == ReportType.DAMPAK }).map((val) => { return val.category.id }))].length;
+    const pencegahanFulfilledCount = [... new Set(schoolReports.filter((val) => { return val.category.type == ReportType.PENCEGAHAN && val.category.is_analysis == true }).map((val) => { return val.category.id }))].length;
+    const eksistingFulfilledCount = [... new Set(schoolReports.filter((val) => { return val.category.type == ReportType.EXISTING && val.category.is_analysis == true }).map((val) => { return val.category.id }))].length;
+    const dampakFulfilledCount = [... new Set(schoolReports.filter((val) => { return val.category.type == ReportType.DAMPAK && val.category.is_analysis == true }).map((val) => { return val.category.id }))].length;
 
     const pencegahanScore = pencegahanCategoriesCount == 0 ? 0 : (pencegahanFulfilledCount / pencegahanCategoriesCount);
     const tanggapDaruratScore = eksistingCategoriesCount == 0 ? 0 : (eksistingFulfilledCount / eksistingCategoriesCount);
