@@ -7,6 +7,10 @@ import { Category } from "../entities/category.entity";
 import { Comment } from "../entities/comment.entity";
 import { Like } from "../entities/like.entity";
 import { Area } from "../entities/area.entity";
+import { District } from "../entities/district.entity";
+import { Village } from "../entities/village.entity";
+import { Regency } from "../entities/regency.entity";
+import { Province } from "../entities/province.entity";
 
 export const AppDataSource = new DataSource({
     type: "mysql",
@@ -14,7 +18,7 @@ export const AppDataSource = new DataSource({
     username: env.DB_USER,
     password: env.DB_PASS,
     database: env.DB_NAME,
-    entities: [User, Plant, Image, Category, Comment, Like, Area],
+    entities: [User, Plant, Image, Category, Comment, Like, Area, Village, District, Regency, Province],
     synchronize: true,
     logging: false,
 });
