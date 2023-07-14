@@ -1,5 +1,5 @@
 import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm"
-import { Report } from "./report.entity"
+import { Plant } from "./plant.entity"
 import { User } from "./user.entity"
 
 @Entity("comments")
@@ -10,9 +10,9 @@ export class Comment extends BaseEntity {
     @Column()
     comment!: string
 
-    @ManyToOne(() => Report, (report) => report.comments, { onDelete: "CASCADE" })
+    @ManyToOne(() => Plant, (plant) => plant.comments, { onDelete: "CASCADE" })
     @JoinColumn()
-    report!: Report
+    plant!: Plant
 
     @ManyToOne(() => User, (user) => user.comments, { onDelete: "CASCADE" })
     @JoinColumn()

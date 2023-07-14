@@ -1,5 +1,5 @@
 import { PrimaryGeneratedColumn, Column, JoinColumn, ManyToOne, Entity, BaseEntity, CreateDateColumn } from "typeorm";
-import { Report } from "./report.entity";
+import { Plant } from "./plant.entity";
 
 @Entity("images")
 export class Image extends BaseEntity {
@@ -12,7 +12,7 @@ export class Image extends BaseEntity {
     @CreateDateColumn()
     created_at!: Date
 
-    @ManyToOne(() => Report, (report) => report.images, { onDelete: "CASCADE" })
+    @ManyToOne(() => Plant, (plant) => plant.images, { onDelete: "CASCADE" })
     @JoinColumn()
-    report!: Report
+    plant!: Plant
 }

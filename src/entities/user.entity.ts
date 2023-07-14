@@ -1,5 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, BaseEntity, OneToMany } from "typeorm";
-import { Report } from "./report.entity";
+import { Plant } from "./plant.entity";
 import { Comment } from "./comment.entity";
 import { Like } from "./like.entity";
 
@@ -19,8 +19,8 @@ export class User extends BaseEntity {
     @Column({ select: false })
     password!: string
 
-    @OneToMany(() => Report, (report) => report.user)
-    reports!: Report[]
+    @OneToMany(() => Plant, (plant) => plant.user)
+    plants!: Plant[]
 
     @OneToMany(() => Comment, (comment) => comment.author)
     comments!: Comment[]

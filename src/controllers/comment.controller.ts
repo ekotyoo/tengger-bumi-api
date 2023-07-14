@@ -1,20 +1,20 @@
 import { RequestHandler } from "express";
 import createHttpError from "http-errors";
 import { User } from "../entities/user.entity";
-import { Report } from "../entities/report.entity";
+import { Plant } from "../entities/plant.entity";
 import { Comment } from "../entities/comment.entity";
 
 export const postComment: RequestHandler = async (req, res, next) => {
     try {
-        const { comment, report_id } = req.body;
+        const { comment, plant_id } = req.body;
         const user_id = req.user_id;
 
         const author = await User.findOneByOrFail({ id: user_id });
-        const report = await Report.findOneByOrFail({ id: report_id });
+        const plant = await Plant.findOneByOrFail({ id: plant_id });
 
         const newComment = new Comment();
         newComment.author = author;
-        newComment.report = report;
+        newComment.plant = plant;
         newComment.comment = comment;
 
         const commentResult = await newComment.save();
@@ -39,10 +39,10 @@ export const postComment: RequestHandler = async (req, res, next) => {
 
 export const deleteComment: RequestHandler = async (req, res, next) => {
     try {
-        const report_id = Number(req.params.report_id);
+        const plant_id = Number(req.params.plant_id);
         const comment_id = Number(req.params.comment_id);
 
-        const comment = await Comment.findOneBy({ id: comment_id, report: { id: report_id } });
+        const comment = await Comment.findOneBy({ id: comment_id, plant: { id: plant_id } });
         const result = await comment?.remove();
 
         if (!result) return next(createHttpError(404, `Comment with id: "${comment_id}" does not exists`));
@@ -55,10 +55,10 @@ export const deleteComment: RequestHandler = async (req, res, next) => {
 
 export const getComments: RequestHandler = async (req, res, next) => {
     try {
-        const reportId = req.body.report_id;
+        const plantId = req.body.plant_id;
         const user_id = req.user_id;
         const data = await Comment.find({
-            where: { report: { id: reportId } },
+            where: { plant: { id: plantId } },
             relations: { author: true },
             order: { created_at: "DESC" }
         });

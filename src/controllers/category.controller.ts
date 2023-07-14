@@ -1,16 +1,13 @@
 import { RequestHandler } from "express";
 import { Category } from "../entities/category.entity";
-import { ReportType } from "../entities/ReportType.entity";
 
 export const postCategory: RequestHandler = async (req, res, next) => {
-    const { name, type, is_analysis } = req.body;
+    const { name } = req.body;
     console.log(req.body);
 
     try {
         const newCategory = new Category();
         newCategory.name = name;
-        newCategory.type = type as ReportType;
-        newCategory.is_analysis = is_analysis == 'true' || is_analysis == true;
 
         const category = await newCategory.save();
 
@@ -22,15 +19,8 @@ export const postCategory: RequestHandler = async (req, res, next) => {
 }
 
 export const getCategories: RequestHandler = async (req, res, next) => {
-    const query = req.query.type ?? '';
-
     try {
-        const data = await Category.find({ where: { type: query as ReportType } });
-        const categories = data.map((category) => <unknown>{
-            id: category.id,
-            name: category.name,
-            type: category.type
-        });
+        const categories = await Category.find();
         req.body = categories;
         next();
     } catch (err) {
