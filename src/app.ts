@@ -9,8 +9,8 @@ import authRoutes from "./routes/auth.route";
 import reportRoutes from "./routes/plant.route";
 import userRoutes from "./routes/user.route";
 import categoryRoutes from "./routes/category.route";
-import areaRoutes from "./routes/area.route";
 import commentRoutes from "./routes/comment.route";
+import areaRoutes from "./routes/area.route";
 
 const app = express();
 
@@ -21,7 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(express.static("public"));
 
-app.get("/", (req, res) => { res.send("Tetenger Bumi API") });
+app.get("/", (req, res) => { return res.send("Tetenger Bumi API") });
 app.use("/api/auth", authRoutes, responseFormatter);
 app.use("/api/plant", reportRoutes, responseFormatter);
 app.use("/api/comment", commentRoutes, responseFormatter);

@@ -16,6 +16,6 @@ router.put("/:id", upload.array("images", 3), PlantController.updatePlant);
 router.delete("/:id", PlantController.deletePlant);
 router.post("/:id/like", PlantController.postLike);
 router.delete("/:id/like", PlantController.deleteLike);
-router.delete("/:report_id/comment/:comment_id", CommentController.deleteComment);
+router.delete("/:plant_id/comment/:comment_id", CommentController.deleteComment);
 
 export default router;

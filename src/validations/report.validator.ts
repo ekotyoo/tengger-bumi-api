@@ -11,7 +11,7 @@ export const reportValidator = (req: Request, res: Response, next: NextFunction)
         category_id: Joi.string().required(),
         planting_date: Joi.date().required(),
         planting_count: Joi.number().required(),
-        area_id: Joi.string().required(),
+        village_id: Joi.string().required(),
     }).options({ allowUnknown: true });
 
     validationHandler(req, res, next, schema);

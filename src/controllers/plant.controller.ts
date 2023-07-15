@@ -7,16 +7,28 @@ import { User } from "../entities/user.entity";
 import { paginateResponse } from "../util/pagination";
 import { Category } from "../entities/category.entity";
 import { Like } from "../entities/like.entity";
-import { Area } from "../entities/area.entity";
+import { Village } from "../entities/village.entity";
 
 export const postPlant: RequestHandler = async (req, res, next) => {
-    const { name, description, latitude, longitude, planting_date, planting_count, category_id, area_id } = req.body;
+    const {
+        name,
+        description,
+        latitude,
+        longitude,
+        village_id,
+        planting_date,
+        planting_count,
+        category_id,
+    } = req.body;
     const user_id = req.user_id;
 
     try {
         const user = await User.findOneByOrFail({ id: user_id });
         const category = await Category.findOneByOrFail({ id: category_id });
-        const area = await Area.findOneByOrFail({ id: area_id });
+        const village = await Village.findOneOrFail({ where: { id: village_id }, relations: { district: { regency: { province: true } } } });
+        const district = village.district;
+        const regency = district.regency;
+        const province = regency.province;
 
         const imageFiles = req.files as Express.Multer.File[];
 
@@ -28,14 +40,14 @@ export const postPlant: RequestHandler = async (req, res, next) => {
             return image;
         });
 
-        const plantingDate = new Date(parseInt(planting_date) * 1000);
+        const plantingDate = new Date(parseInt(planting_date));
 
         const newPlant = new Plant();
         newPlant.user = user;
         newPlant.category = category;
-        newPlant.area = area;
         newPlant.latitude = latitude;
         newPlant.longitude = longitude;
+        newPlant.village = village;
         newPlant.description = description;
         newPlant.images = images;
         newPlant.plant_name = name;
@@ -71,10 +83,7 @@ export const postPlant: RequestHandler = async (req, res, next) => {
                 id: plant.category.id,
                 name: plant.category.name,
             },
-            area: {
-                id: plant.area.id,
-                name: plant.area.name,
-            }
+            address: `${village.name}, ${district.name}, ${regency.name}, ${province.name}`
         };
         return next();
     } catch (err) {
@@ -83,7 +92,7 @@ export const postPlant: RequestHandler = async (req, res, next) => {
 }
 
 export const getPlants: RequestHandler = async (req, res, next) => {
-    const { category_id, area_id, from_timestamp, to_timestamp, author_id } = req.body;
+    const { category_id, from_timestamp, to_timestamp, author_id } = req.body;
     const user_id = req.user_id;
 
     const take = parseInt(req.query.take as string) || 20;
@@ -107,9 +116,6 @@ export const getPlants: RequestHandler = async (req, res, next) => {
                 category: {
                     id: category_id
                 },
-                area: {
-                    id: area_id
-                },
                 created_at: createdAtQuery,
                 user: {
                     id: author_id,
@@ -119,9 +125,15 @@ export const getPlants: RequestHandler = async (req, res, next) => {
                 user: true,
                 images: true,
                 category: true,
-                area: true,
                 likes: {
                     user: true
+                },
+                village: {
+                    district: {
+                        regency: {
+                            province: true
+                        }
+                    }
                 },
                 comments: true,
             },
@@ -134,6 +146,11 @@ export const getPlants: RequestHandler = async (req, res, next) => {
 
         const plants = plantData.map((plant) => {
             const allowEdit = plant.user.id == user_id;
+            const village = plant.village;
+            const district = village.district;
+            const regency = district.regency;
+            const province = regency.province;
+
             return <unknown>{
                 id: plant.id,
                 name: plant.plant_name,
@@ -160,10 +177,7 @@ export const getPlants: RequestHandler = async (req, res, next) => {
                     id: plant.category.id,
                     name: plant.category.name,
                 },
-                area: {
-                    id: plant.area.id,
-                    name: plant.area.name,
-                }
+                address: `${village.name}, ${district.name}, ${regency.name}, ${province.name}`
             };
         });
 
@@ -184,7 +198,13 @@ export const getPlant: RequestHandler = async (req, res, next) => {
                 user: true,
                 images: true,
                 category: true,
-                area: true,
+                village: {
+                    district: {
+                        regency: {
+                            province: true
+                        }
+                    }
+                },
                 likes: {
                     user: true
                 }
@@ -194,6 +214,11 @@ export const getPlant: RequestHandler = async (req, res, next) => {
         if (!plant) return next(createHttpError(404, `Plant with id: ${plant_id} does not exists`));
 
         const allowEdit = plant.user.id == user_id;
+        const village = plant.village;
+        const district = village.district;
+        const regency = district.regency;
+        const province = regency.province;
+
         req.body = {
             id: plant.id,
             name: plant.plant_name,
@@ -219,10 +244,7 @@ export const getPlant: RequestHandler = async (req, res, next) => {
                 id: plant.category.id,
                 name: plant.category.name,
             },
-            area: {
-                id: plant.area.id,
-                name: plant.area.name
-            }
+            address: `${village.name}, ${district.name}, ${regency.name}, ${province.name}`
         };
         return next();
     } catch (err) {
@@ -232,17 +254,36 @@ export const getPlant: RequestHandler = async (req, res, next) => {
 
 export const updatePlant: RequestHandler = async (req, res, next) => {
     const id = Number(req.params.id);
-    const { name, description, latitude, longitude, category_id, area_id, deleted_images } = req.body;
+    const { name, description, latitude, longitude, category_id, deleted_images, village_id } = req.body;
 
     const user_id = req.user_id;
 
     try {
-        const plant = await Plant.findOne({ where: { id: id }, relations: { images: true, user: true, likes: { user: true }, comments: true } });
+        const plant = await Plant.findOne({
+            where: { id: id },
+            relations: {
+                images: true,
+                user: true,
+                likes: { user: true },
+                comments: true,
+                village: {
+                    district: {
+                        regency: {
+                            province: true
+                        }
+                    }
+                }
+            }
+        });
         if (!plant) return next(createHttpError(400, `Plant with id ${id} not found`));
 
         const user = await User.findOneByOrFail({ id: user_id });
         const category = await Category.findOneByOrFail({ id: category_id });
-        const area = await Area.findOneByOrFail({ id: area_id });
+        const village = await Village.findOneOrFail({ where: { id: village_id }, relations: { district: { regency: { province: true } } } });
+        const district = village.district;
+        const regency = district.regency;
+        const province = regency.province;
+
 
         const imageFiles = req.files as Express.Multer.File[];
 
@@ -268,7 +309,7 @@ export const updatePlant: RequestHandler = async (req, res, next) => {
         plant.latitude = latitude;
         plant.longitude = longitude;
         plant.category = category;
-        plant.area = area;
+        plant.village = village;
         plant.images = [...oldImages, ...images];
 
         await plant.save();
@@ -281,7 +322,6 @@ export const updatePlant: RequestHandler = async (req, res, next) => {
                 likes: { user: true },
                 comments: true,
                 category: true,
-                area: true
             }
         });
         if (!updatedPlant) return next(createHttpError(400, 'Something went wrong, try again later'));
@@ -313,10 +353,7 @@ export const updatePlant: RequestHandler = async (req, res, next) => {
                 id: updatedPlant.category.id,
                 name: updatedPlant.category.name,
             },
-            area: {
-                id: updatedPlant.area.id,
-                name: updatedPlant.area.name,
-            }
+            address: `${village.name}, ${district.name}, ${regency.name}, ${province.name}`
         };
         return next();
     } catch (err) {

@@ -4,7 +4,7 @@ import { User } from "./user.entity";
 import { Category } from "./category.entity";
 import { Comment } from "./comment.entity";
 import { Like } from "./like.entity";
-import { Area } from "./area.entity";
+import { Village } from "./village.entity";
 
 @Entity("plants")
 export class Plant extends BaseEntity {
@@ -26,16 +26,16 @@ export class Plant extends BaseEntity {
     @Column("double")
     longitude!: number
 
+    @ManyToOne(() => Village, (village) => village.plants)
+    @JoinColumn()
+    village!: Village
+
     @Column()
     description!: string
 
     @ManyToOne(() => Category, (category) => category.plants)
     @JoinColumn()
     category!: Category
-
-    @ManyToOne(() => Area, (area) => area.plants)
-    @JoinColumn()
-    area!: Area
 
     @OneToMany(() => Image, (image) => image.plant, { cascade: ["insert"] })
     images!: Image[]
