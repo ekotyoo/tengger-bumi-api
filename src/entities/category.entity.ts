@@ -9,6 +9,9 @@ export class Category extends BaseEntity {
     @Column()
     name!: string
 
+    @Column()
+    icon_path!: string
+
     @OneToMany(() => Plant, (report) => report.category)
     plants!: Plant[]
 }

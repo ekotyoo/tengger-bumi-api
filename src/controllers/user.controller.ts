@@ -20,6 +20,39 @@ export const getUser: RequestHandler = async (req, res, next) => {
     }
 }
 
+export const getUserStats: RequestHandler = async (req, res, next) => {
+    const id = Number(req.params.id);
+
+    try {
+        const user = await User.findOneOrFail({ where: { id: id }, relations: { plants: { category: true } } });
+        const grouppedByCategories = groupBy(user.plants, (p) => p.category.name);
+        const keys = Object.keys(grouppedByCategories);
+
+        const result = keys.map((val) => {
+            const count = grouppedByCategories[val].length;
+            const category = grouppedByCategories[val][0].category;
+            return {
+                ...category,
+                count: count
+            };
+        });
+        req.body = result;
+
+        next();
+    } catch (err) {
+        next(err);
+    }
+}
+
+function groupBy<T>(arr: T[], fn: (item: T) => any) {
+    return arr.reduce<Record<string, T[]>>((prev, curr) => {
+        const groupKey = fn(curr);
+        const group = prev[groupKey] || [];
+        group.push(curr);
+        return { ...prev, [groupKey]: group };
+    }, {});
+}
+
 export const updateUser: RequestHandler = async (req, res, next) => {
     const id = Number(req.params.id);
     const { name, delete_old } = req.body;

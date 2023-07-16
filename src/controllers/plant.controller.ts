@@ -79,10 +79,7 @@ export const postPlant: RequestHandler = async (req, res, next) => {
             },
             created_at: plant.created_at,
             images: plant.images.map((image) => image.file_path),
-            category: {
-                id: plant.category.id,
-                name: plant.category.name,
-            },
+            category: plant.category,
             address: `${village.name}, ${district.name}, ${regency.name}, ${province.name}`
         };
         return next();
@@ -185,10 +182,7 @@ export const getPlants: RequestHandler = async (req, res, next) => {
                 },
                 created_at: plant.created_at,
                 images: plant.images.map((image) => image.file_path),
-                category: {
-                    id: plant.category.id,
-                    name: plant.category.name,
-                },
+                category: plant.category,
                 address: `${village.name}, ${district.name}, ${regency.name}, ${province.name}`
             };
         });
@@ -252,10 +246,7 @@ export const getPlant: RequestHandler = async (req, res, next) => {
             },
             created_at: plant.created_at,
             images: plant.images.map((image) => image.file_path),
-            category: {
-                id: plant.category.id,
-                name: plant.category.name,
-            },
+            category: plant.category,
             address: `${village.name}, ${district.name}, ${regency.name}, ${province.name}`
         };
         return next();
@@ -361,10 +352,7 @@ export const updatePlant: RequestHandler = async (req, res, next) => {
             },
             created_at: updatedPlant.created_at,
             images: updatedPlant.images.map((image) => image.file_path),
-            category: {
-                id: updatedPlant.category.id,
-                name: updatedPlant.category.name,
-            },
+            category: updatedPlant.category,
             address: `${village.name}, ${district.name}, ${regency.name}, ${province.name}`
         };
         return next();
