@@ -92,7 +92,14 @@ export const postPlant: RequestHandler = async (req, res, next) => {
 }
 
 export const getPlants: RequestHandler = async (req, res, next) => {
-    const { category_id, from_timestamp, to_timestamp, author_id } = req.body;
+    console.log(req.body);
+    const {
+        category_id,
+        from_timestamp,
+        to_timestamp,
+        author_id,
+        regency_id,
+    } = req.body;
     const user_id = req.user_id;
 
     const take = parseInt(req.query.take as string) || 20;
@@ -101,11 +108,11 @@ export const getPlants: RequestHandler = async (req, res, next) => {
     let createdAtQuery;
 
     if (from_timestamp && to_timestamp) {
-        createdAtQuery = Between(new Date(parseInt(from_timestamp) * 1000), new Date(parseInt(to_timestamp) * 1000));
+        createdAtQuery = Between(new Date(parseInt(from_timestamp)), new Date(parseInt(to_timestamp)));
     } else if (from_timestamp && !to_timestamp) {
-        createdAtQuery = MoreThan(new Date(parseInt(from_timestamp) * 1000));
+        createdAtQuery = MoreThan(new Date(parseInt(from_timestamp)));
     } else if (!from_timestamp && to_timestamp) {
-        createdAtQuery = LessThan(new Date(parseInt(to_timestamp) * 1000));
+        createdAtQuery = LessThan(new Date(parseInt(to_timestamp)));
     }
 
     try {
@@ -115,6 +122,11 @@ export const getPlants: RequestHandler = async (req, res, next) => {
             where: {
                 category: {
                     id: category_id
+                },
+                village: {
+                    district: {
+                        regency: regency_id
+                    }
                 },
                 created_at: createdAtQuery,
                 user: {
