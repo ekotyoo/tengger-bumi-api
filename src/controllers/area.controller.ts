@@ -29,6 +29,20 @@ export const getRegencies: RequestHandler = async (req, res, next) => {
     }
 }
 
+export const getAllRegencies: RequestHandler = async (req, res, next) => {
+    try {
+        const regencies = await Regency.find({ relations: { province: true } });
+        req.body = regencies.map((val) => <unknown>{
+            id: val.id,
+            name: val.name,
+            province_id: val.province.id,
+        });
+        next();
+    } catch (err) {
+        next(err);
+    }
+}
+
 export const getDistricts: RequestHandler = async (req, res, next) => {
     try {
         const regency_id = Number(req.params.regency_id);

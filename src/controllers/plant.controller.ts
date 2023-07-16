@@ -122,7 +122,9 @@ export const getPlants: RequestHandler = async (req, res, next) => {
                 },
                 village: {
                     district: {
-                        regency: regency_id
+                        regency: {
+                            id: regency_id
+                        }
                     }
                 },
                 created_at: createdAtQuery,
