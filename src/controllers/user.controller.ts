@@ -1,6 +1,7 @@
 import { RequestHandler } from "express";
 import createHttpError from "http-errors";
 import { User } from "../entities/user.entity";
+import { groupBy } from "../util/list_util";
 
 export const getUser: RequestHandler = async (req, res, next) => {
     const id = Number(req.params.id);
@@ -42,15 +43,6 @@ export const getUserStats: RequestHandler = async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-}
-
-function groupBy<T>(arr: T[], fn: (item: T) => any) {
-    return arr.reduce<Record<string, T[]>>((prev, curr) => {
-        const groupKey = fn(curr);
-        const group = prev[groupKey] || [];
-        group.push(curr);
-        return { ...prev, [groupKey]: group };
-    }, {});
 }
 
 export const updateUser: RequestHandler = async (req, res, next) => {

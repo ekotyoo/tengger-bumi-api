@@ -6,7 +6,7 @@ import { Village } from "../entities/village.entity";
 
 export const getProvinces: RequestHandler = async (req, res, next) => {
     try {
-        const provinces = await Province.find();
+        const provinces = await Province.find({ order: { name: 'ASC' } });
         req.body = provinces;
         next();
     } catch (err) {
@@ -17,7 +17,7 @@ export const getProvinces: RequestHandler = async (req, res, next) => {
 export const getRegencies: RequestHandler = async (req, res, next) => {
     try {
         const province_id = Number(req.params.province_id);
-        const regencies = await Regency.find({ where: { province: { id: province_id } }, relations: { province: true } });
+        const regencies = await Regency.find({ where: { province: { id: province_id } }, relations: { province: true }, order: { name: 'ASC' } });
         req.body = regencies.map((val) => <unknown>{
             id: val.id,
             name: val.name,
@@ -31,7 +31,7 @@ export const getRegencies: RequestHandler = async (req, res, next) => {
 
 export const getAllRegencies: RequestHandler = async (req, res, next) => {
     try {
-        const regencies = await Regency.find({ relations: { province: true } });
+        const regencies = await Regency.find({ relations: { province: true }, order: { name: 'ASC' } });
         req.body = regencies.map((val) => <unknown>{
             id: val.id,
             name: val.name,
@@ -46,7 +46,7 @@ export const getAllRegencies: RequestHandler = async (req, res, next) => {
 export const getDistricts: RequestHandler = async (req, res, next) => {
     try {
         const regency_id = Number(req.params.regency_id);
-        const districts = await District.find({ where: { regency: { id: regency_id } }, relations: { regency: true } });
+        const districts = await District.find({ where: { regency: { id: regency_id } }, relations: { regency: true }, order: { name: 'ASC' } });
         req.body = districts.map((val) => <unknown>{
             id: val.id,
             name: val.name,
@@ -61,7 +61,7 @@ export const getDistricts: RequestHandler = async (req, res, next) => {
 export const getVillages: RequestHandler = async (req, res, next) => {
     try {
         const district_id = Number(req.params.district_id);
-        const villages = await Village.find({ where: { district: { id: district_id } }, relations: { district: true } });
+        const villages = await Village.find({ where: { district: { id: district_id } }, relations: { district: true }, order: { name: 'ASC' } });
         req.body = villages.map((val) => <unknown>{
             id: val.id,
             name: val.name,

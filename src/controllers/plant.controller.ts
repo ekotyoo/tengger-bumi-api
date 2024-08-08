@@ -8,6 +8,7 @@ import { paginateResponse } from "../util/pagination";
 import { Category } from "../entities/category.entity";
 import { Like } from "../entities/like.entity";
 import { Village } from "../entities/village.entity";
+import { groupBy } from "../util/list_util";
 
 export const postPlant: RequestHandler = async (req, res, next) => {
     const {
@@ -89,7 +90,6 @@ export const postPlant: RequestHandler = async (req, res, next) => {
 }
 
 export const getPlants: RequestHandler = async (req, res, next) => {
-    console.log(req.body);
     const {
         category_id,
         from_timestamp,
@@ -99,7 +99,7 @@ export const getPlants: RequestHandler = async (req, res, next) => {
     } = req.body;
     const user_id = req.user_id;
 
-    const take = parseInt(req.query.take as string) || 20;
+    const take = parseInt(req.query.take as string) || 9999;
     const page = parseInt(req.query.page as string) || 1;
 
     let createdAtQuery;
@@ -195,6 +195,104 @@ export const getPlants: RequestHandler = async (req, res, next) => {
     }
 }
 
+export const getGlobalStats: RequestHandler = async (req, res, next) => {
+    try {
+        const plants = await Plant.find({ relations: { category: true } });
+        const grouppedByCategories = groupBy(plants, (p) => p.category.name);
+        const keys = Object.keys(grouppedByCategories);
+
+        const result = keys.map((val) => {
+            const count = grouppedByCategories[val].length;
+            const category = grouppedByCategories[val][0].category;
+            return {
+                ...category,
+                count: count
+            };
+        });
+        req.body = result;
+
+        next();
+    } catch (err) {
+        next(err);
+    }
+}
+
+export const getBookmarks: RequestHandler = async (req, res, next) => {
+    try {
+        const user_id = Number(req.params.id);
+
+        const data = await Plant.find({
+            where: {
+                likes: {
+                    is_like: true,
+                    user: {
+                        id: user_id
+                    }
+                }
+            },
+            relations: {
+                user: true,
+                images: true,
+                category: true,
+                likes: {
+                    user: true
+                },
+                village: {
+                    district: {
+                        regency: {
+                            province: true
+                        }
+                    }
+                },
+                comments: true,
+            },
+            order: {
+                created_at: "DESC"
+            }
+        });
+
+        const plants = data.map((plant) => {
+            const allowEdit = plant.user.id == user_id;
+            const village = plant.village;
+            const district = village.district;
+            const regency = district.regency;
+            const province = regency.province;
+
+            return <unknown>{
+                id: plant.id,
+                name: plant.plant_name,
+                description: plant.description,
+                liked: plant.likes?.find((val) => val.user.id == user_id)?.is_like,
+                likes_count: plant.likes?.filter((val) => val.is_like).length ?? 0,
+                dislikes_count: plant.likes?.filter((val) => !val.is_like).length ?? 0,
+                comments_count: plant.comments?.length,
+                allow_edit: allowEdit,
+                planting_date: plant.planting_date,
+                planting_count: plant.planting_count,
+                author: {
+                    id: plant.user.id,
+                    name: plant.user.name,
+                    avatar: plant.user.avatar_path
+                },
+                position: {
+                    latitude: plant.latitude,
+                    longitude: plant.longitude
+                },
+                created_at: plant.created_at,
+                images: plant.images.map((image) => image.file_path),
+                category: plant.category,
+                address: `${village.name}, ${district.name}, ${regency.name}, ${province.name}`
+            };
+        });
+
+        req.body = plants;
+
+        next();
+    } catch (err) {
+        next(err);
+    }
+}
+
 export const getPlant: RequestHandler = async (req, res, next) => {
     const plant_id = Number(req.params.id);
     const user_id = req.user_id;
@@ -249,7 +347,26 @@ export const getPlant: RequestHandler = async (req, res, next) => {
             created_at: plant.created_at,
             images: plant.images.map((image) => image.file_path),
             category: plant.category,
-            address: `${village.name}, ${district.name}, ${regency.name}, ${province.name}`
+            address: `${village.name}, ${district.name}, ${regency.name}, ${province.name}`,
+            province: {
+                id: province.id,
+                name: province.name
+            },
+            regency: {
+                id: regency.id,
+                name: regency.name,
+                province_id: province.id
+            },
+            district: {
+                id: district.id,
+                name: district.name,
+                regency_id: regency.id
+            },
+            village: {
+                id: village.id,
+                name: village.name,
+                district_id: district.id
+            },
         };
         return next();
     } catch (err) {
